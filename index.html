@@ -18,7 +18,6 @@
         .tab-inactive { color: #64748b; font-weight: 500; }
         .tab-inactive:hover { color: #3b82f6; }
         
-        /* Custom Scrollbar for tables */
         .table-container::-webkit-scrollbar { height: 8px; width: 8px; }
         .table-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -61,26 +60,25 @@
 
     <main class="flex-1 overflow-hidden flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
         
-        <!-- GLOBAL LOADER -->
         <div id="global-loader" class="flex-1 flex justify-center items-center">
             <div class="flex flex-col items-center">
-                <i class="fas fa-circle-notch fa-spin text-blue-600 text-4xl mb-4"></i>
-                <p class="text-gray-500">Connecting to shared database...</p>
+                <i class="fas fa-circle-notch fa-spin text-blue-600 text-4xl mb-4" id="loader-icon"></i>
+                <p class="text-gray-500" id="loader-text">Connecting to shared database...</p>
+                <div id="loader-error" class="text-red-500 mt-4 text-center max-w-md text-sm hidden"></div>
             </div>
         </div>
 
-        <!-- TAB 1: TASK TRACKER -->
+        <!-- Tab: Tracker -->
         <div id="tab-tracker" class="hidden flex-col h-full">
-            
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex flex-col gap-4">
-                <div class="flex justify-between items-center">
-                    <div class="flex space-x-4 text-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex flex-wrap gap-2 text-sm">
                         <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium"><span id="stat-total">0</span> Total</div>
                         <div class="bg-green-50 text-green-700 px-3 py-1 rounded-full font-medium"><span id="stat-open">0</span> Open</div>
                         <div class="bg-gray-50 text-gray-700 px-3 py-1 rounded-full font-medium"><span id="stat-completed">0</span> Completed</div>
                         <div class="bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium"><span id="stat-overdue">0</span> Overdue</div>
                     </div>
-                    <button onclick="openAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium transition-colors">
+                    <button onclick="openAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium transition-colors whitespace-nowrap">
                         <i class="fas fa-plus mr-2"></i> Add New Task
                     </button>
                 </div>
@@ -90,7 +88,7 @@
                         <label class="block text-xs font-medium text-gray-700 mb-1">Search</label>
                         <div class="relative">
                             <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
-                            <input type="text" id="filter-search" oninput="renderTrackerTable()" placeholder="Search tasks, BU, comments..." class="pl-9 w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <input type="text" id="filter-search" oninput="renderTrackerTable()" placeholder="Search tasks, BU, comments, people..." class="pl-9 w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </div>
                     <div>
@@ -124,70 +122,56 @@
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden table-container">
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50 sticky top-0 z-10">
                             <tr>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BU</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="toggleSort('startDate')">Start Date <i class="fas fa-sort ml-1"></i></th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="toggleSort('deadlineDate')">Deadline <i class="fas fa-sort ml-1"></i></th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Depending On</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">People</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Latest Comment</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="toggleSort('priority')">Priority <i class="fas fa-sort ml-1"></i></th>
-                                <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BU</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('startDate')">Start Date <i class="fas fa-sort ml-1"></i></th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('deadlineDate')">Deadline <i class="fas fa-sort ml-1"></i></th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Depending On</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">People</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Latest Comment</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('priority')">Priority <i class="fas fa-sort ml-1"></i></th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="tracker-tbody" class="bg-white divide-y divide-gray-200 text-sm">
-                            <!-- Tasks will be injected here -->
-                        </tbody>
+                        <tbody id="tracker-tbody" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
                     </table>
                     <div id="tracker-empty" class="hidden text-center py-10 text-gray-500">
-                        <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
-                        <p>No tasks found matching your criteria.</p>
+                        <p>No tasks found.</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: REPORTS -->
+        <!-- Tab: Reports -->
         <div id="tab-reports" class="hidden flex-col h-full overflow-y-auto">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
                 <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Generate Custom Report</h2>
-                
                 <div class="max-w-md mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Business Unit</label>
                     <div id="report-bu-filter" class="w-full"></div>
-                    <p class="text-xs text-gray-500 mt-2">Select one or more Business Units to generate a comprehensive report of all associated tasks. Leave blank to include all.</p>
                 </div>
-                
                 <div class="flex justify-start space-x-3 border-t pt-4">
-                    <button onclick="resetReportFilters()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md shadow-sm text-sm font-medium">
-                        Reset Filter
-                    </button>
-                    <button onclick="generateReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium">
-                        Preview & Generate Report
-                    </button>
+                    <button onclick="resetReportFilters()" class="bg-white border border-gray-300 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50">Reset</button>
+                    <button onclick="generateReport()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">Generate Report</button>
                 </div>
             </div>
 
-            <div id="report-preview-section" class="hidden bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-[400px]">
+            <div id="report-preview-section" class="hidden bg-white p-6 rounded-lg shadow-sm border flex-1 flex flex-col min-h-[400px]">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-md font-bold text-gray-900">Report Preview (<span id="report-count">0</span> tasks)</h3>
                     <div class="flex space-x-2">
-                        <button onclick="downloadCSV()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center">
-                            <i class="fas fa-file-csv mr-2"></i> Excel (CSV)
-                        </button>
-                        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center">
-                            <i class="fas fa-file-pdf mr-2"></i> PDF Report
-                        </button>
+                        <button onclick="downloadCSV()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium"><i class="fas fa-file-csv mr-2"></i> CSV</button>
+                        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium"><i class="fas fa-file-pdf mr-2"></i> PDF</button>
                     </div>
                 </div>
-                <div class="table-container overflow-x-auto border border-gray-200 rounded flex-1">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm" id="report-table">
+                <div class="table-container overflow-x-auto border rounded flex-1">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-3 py-2 text-left font-medium text-gray-500">BU</th>
@@ -195,7 +179,7 @@
                                 <th class="px-3 py-2 text-left font-medium text-gray-500">Start Date</th>
                                 <th class="px-3 py-2 text-left font-medium text-gray-500">Deadline</th>
                                 <th class="px-3 py-2 text-left font-medium text-gray-500">Depending On</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">Submission Date</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Submission</th>
                                 <th class="px-3 py-2 text-left font-medium text-gray-500">People</th>
                                 <th class="px-3 py-2 text-left font-medium text-gray-500">Status</th>
                                 <th class="px-3 py-2 text-left font-medium text-gray-500">Priority</th>
@@ -208,189 +192,149 @@
             </div>
         </div>
 
-        <!-- TAB 3: INSIGHTS -->
+        <!-- Tab: Insights -->
         <div id="tab-insights" class="hidden flex-col h-full overflow-y-auto space-y-6">
-            
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">Total Tasks</p>
+                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Total Active Tasks</p>
                     <p class="text-2xl font-bold text-gray-900 mt-1" id="in-total">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">Completion %</p>
+                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Overall Completion %</p>
                     <p class="text-2xl font-bold text-blue-600 mt-1" id="in-completion">0%</p>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">Overdue</p>
+                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Active Overdue</p>
                     <p class="text-2xl font-bold text-red-600 mt-1" id="in-overdue">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">High Priority</p>
+                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">High Priority (Active)</p>
                     <p class="text-2xl font-bold text-orange-500 mt-1" id="in-high">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
                     <p class="text-xs text-gray-500 font-semibold uppercase">Awaiting Review</p>
                     <p class="text-2xl font-bold text-purple-600 mt-1" id="in-review">0</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Recommendations -->
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 md:col-span-1">
-                    <h3 class="text-md font-bold text-gray-900 mb-4 border-b pb-2"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i> Where Should We Focus?</h3>
+                <div class="bg-white p-5 rounded-lg shadow-sm border md:col-span-1">
+                    <h3 class="text-md font-bold mb-4 border-b pb-2"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i> Focus Points</h3>
                     <ul id="insights-recommendations" class="space-y-3 text-sm text-gray-700 list-disc pl-5">
-                        <!-- Filled by JS -->
+                        <li>Tasks marked as "Completed" are excluded from active workload views.</li>
+                        <li>Track active blockers and departmental handoffs under "Requires Attention".</li>
                     </ul>
                 </div>
-                
-                <!-- Requires Attention -->
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 md:col-span-2 flex flex-col max-h-96">
-                    <h3 class="text-md font-bold text-gray-900 mb-4 border-b pb-2"><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> Requires Attention</h3>
-                    <div class="overflow-y-auto flex-1 pr-2 space-y-3" id="insights-attention">
-                        <!-- Filled by JS -->
-                    </div>
+                <div class="bg-white p-5 rounded-lg shadow-sm border md:col-span-2 flex flex-col max-h-96">
+                    <h3 class="text-md font-bold mb-4 border-b pb-2"><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> Requires Attention (Active Tasks)</h3>
+                    <div class="overflow-y-auto flex-1 pr-2 space-y-3" id="insights-attention"></div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col">
-                    <div class="mb-4 text-center">
-                        <h3 class="text-md font-bold text-gray-900">Tasks by Status</h3>
-                        <p class="text-xs text-gray-500">Current distribution of tasks by status</p>
+                <div class="bg-white p-5 rounded-lg shadow-sm border flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-md font-bold text-gray-900">Active Tasks by Status</h3>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium">Excludes Completed</span>
                     </div>
-                    <div class="flex-1 relative min-h-[250px]">
-                        <canvas id="chartStatus"></canvas>
-                    </div>
+                    <div class="flex-1 relative min-h-[300px]"><canvas id="chartStatus"></canvas></div>
                 </div>
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col">
-                    <div class="mb-4 text-center">
-                        <h3 class="text-md font-bold text-gray-900">Tasks by Business Unit</h3>
-                        <p class="text-xs text-gray-500">Task workload across business units</p>
+                <div class="bg-white p-5 rounded-lg shadow-sm border flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-md font-bold text-gray-900">Active Tasks by Business Unit</h3>
+                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-medium">Excludes Completed</span>
                     </div>
-                    <div class="flex-1 relative min-h-[250px]">
-                        <canvas id="chartBU"></canvas>
-                    </div>
+                    <div class="flex-1 relative min-h-[300px]"><canvas id="chartBU"></canvas></div>
                 </div>
             </div>
-
         </div>
-
     </main>
 
-    <!-- Add/Edit Task Modal -->
+    <!-- Modal: Add / Edit Task -->
     <div id="task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full">
+            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform sm:max-w-2xl sm:w-full">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 border-b pb-2 mb-4" id="task-modal-title">Add/Edit Task</h3>
+                    <h3 class="text-lg font-medium border-b pb-2 mb-4" id="task-modal-title">Add New Task</h3>
                     <form id="task-form" class="space-y-4">
                         <input type="hidden" id="task-id">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium mb-1">BU *</label><div id="form-bu"></div><p class="text-xs text-red-500 hidden mt-1" id="err-bu">Required</p></div>
+                            <div><label class="block text-sm font-medium mb-1">Task(s) *</label><div id="form-subtask"></div><p class="text-xs text-red-500 hidden mt-1" id="err-subtask">Required</p></div>
+                            <div><label class="block text-sm font-medium mb-1">Start Date *</label><input type="date" id="form-start-date" class="w-full border rounded py-2 px-3 text-sm"></div>
+                            <div><label class="block text-sm font-medium mb-1">Deadline Date *</label><input type="date" id="form-deadline" class="w-full border rounded py-2 px-3 text-sm"></div>
+                            <div><label class="block text-sm font-medium mb-1">Depending On</label><div id="form-depending-on"></div></div>
+                            <div><label class="block text-sm font-medium mb-1">People *</label><div id="form-people"></div><p class="text-xs text-red-500 hidden mt-1" id="err-people">Required</p></div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Business Unit(s) *</label>
-                                <div id="form-bu" class="w-full"></div>
-                                <p class="text-xs text-red-500 hidden mt-1" id="err-bu">Required</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Task(s) *</label>
-                                <div id="form-subtask" class="w-full"></div>
-                                <p class="text-xs text-red-500 hidden mt-1" id="err-subtask">Required</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                                <input type="date" id="form-start-date" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Deadline Date *</label>
-                                <input type="date" id="form-deadline" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Depending On *</label>
-                                <div id="form-depending-on" class="w-full"></div>
-                                <p class="text-xs text-red-500 hidden mt-1" id="err-depending-on">Required</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">People Working on It *</label>
-                                <div id="form-people" class="w-full"></div>
-                                <p class="text-xs text-red-500 hidden mt-1" id="err-people">Required</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                                <select id="form-status" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="Not Started">Not Started</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="In Training">In Training</option>
-                                    <option value="Awaiting Review">Awaiting Review</option>
-                                    <option value="Submitted">Submitted</option>
-                                    <option value="Completed">Completed</option>
-                                    <option value="On Hold">On Hold</option>
+                                <label class="block text-sm font-medium mb-1">Status *</label>
+                                <select id="form-status" class="w-full border rounded py-2 px-3 text-sm">
+                                    <option value="Not Started">Not Started</option><option value="In Progress">In Progress</option>
+                                    <option value="In Training">In Training</option><option value="Awaiting Review">Awaiting Review</option>
+                                    <option value="Submitted">Submitted</option><option value="Completed">Completed</option><option value="On Hold">On Hold</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
-                                <select id="form-priority" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="High Priority">High Priority</option>
-                                    <option value="Medium Priority">Medium Priority</option>
-                                    <option value="Low Priority">Low Priority</option>
+                                <label class="block text-sm font-medium mb-1">Priority *</label>
+                                <select id="form-priority" class="w-full border rounded py-2 px-3 text-sm">
+                                    <option value="High Priority">High Priority</option><option value="Medium Priority">Medium Priority</option><option value="Low Priority">Low Priority</option>
                                 </select>
                             </div>
+                            <div><label class="block text-sm font-medium mb-1">Submission Date</label><input type="date" id="form-submission" class="w-full border rounded py-2 px-3 text-sm"></div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Submission Date</label>
-                                <input type="date" id="form-submission" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <label class="block text-sm font-medium mb-1">Added By *</label>
+                                <select id="form-author" class="w-full border rounded py-2 px-3 text-sm">
+                                    <option value="">Select name...</option><option value="Baile">Baile</option><option value="Lorain">Lorain</option>
+                                </select>
+                                <p class="text-xs text-red-500 hidden mt-1" id="err-author">Required</p>
                             </div>
-                            <div class="sm:col-span-2" id="initial-comment-container">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Add Comment / Update Note</label>
-                                <input type="text" id="form-initial-comment" placeholder="Optional brief update..." class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium mb-1">Initial Comment</label>
+                                <input type="text" id="form-initial-comment" class="w-full border rounded py-2 px-3 text-sm" placeholder="Optional notes...">
                             </div>
                         </div>
                     </form>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t">
-                    <button type="button" onclick="saveTask()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Save Task
-                    </button>
-                    <button type="button" onclick="closeModal('task-modal')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cancel
-                    </button>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse border-t">
+                    <button type="button" onclick="saveTask()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 sm:ml-3 sm:w-auto text-sm font-medium">Save</button>
+                    <button type="button" onclick="closeModal('task-modal')" class="mt-3 w-full inline-flex justify-center rounded-md border px-4 py-2 bg-white text-gray-700 hover:bg-gray-50 sm:mt-0 sm:ml-3 sm:w-auto text-sm font-medium">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- View Task / Add Comment Modal -->
+    <!-- Modal: View Task -->
     <div id="view-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-3xl sm:w-full">
+            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform sm:max-w-3xl sm:w-full">
                 <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex justify-between items-start mb-4">
-                        <h3 class="text-xl leading-6 font-bold text-gray-900" id="view-title">Task Details</h3>
-                        <button onclick="closeModal('view-modal')" class="text-gray-400 hover:text-gray-500"><i class="fas fa-times text-xl"></i></button>
+                        <h3 class="text-xl font-bold">Task Details</h3>
+                        <button onclick="closeModal('view-modal')" class="text-gray-400 hover:text-gray-500"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div class="space-y-3 text-sm">
-                            <p><span class="font-medium text-gray-500">Business Unit:</span> <span id="view-bu" class="text-gray-900"></span></p>
-                            <p><span class="font-medium text-gray-500">Task:</span> <span id="view-subtask" class="text-gray-900"></span></p>
-                            <p><span class="font-medium text-gray-500">Depending On:</span> <span id="view-depending-on" class="text-gray-900"></span></p>
-                            <p><span class="font-medium text-gray-500">Assigned To:</span> <span id="view-people" class="text-gray-900"></span></p>
+                            <p><span class="font-medium text-gray-500">BU:</span> <span id="view-bu" class="font-semibold text-gray-800"></span></p>
+                            <p><span class="font-medium text-gray-500">Task:</span> <span id="view-subtask" class="text-gray-800"></span></p>
+                            <p><span class="font-medium text-gray-500">Depending On:</span> <span id="view-depending-on" class="text-gray-800"></span></p>
+                            <p><span class="font-medium text-gray-500">People:</span> <span id="view-people" class="text-gray-800"></span></p>
                             <p><span class="font-medium text-gray-500">Status:</span> <span id="view-status"></span></p>
                             <p><span class="font-medium text-gray-500">Priority:</span> <span id="view-priority"></span></p>
                         </div>
                         <div class="space-y-3 text-sm bg-gray-50 p-4 rounded-md border">
-                            <p><span class="font-medium text-gray-500">Start Date:</span> <span id="view-start" class="text-gray-900"></span></p>
-                            <p><span class="font-medium text-gray-500">Deadline Date:</span> <span id="view-deadline" class="font-bold text-gray-900"></span></p>
-                            <p><span class="font-medium text-gray-500">Submission Date:</span> <span id="view-submission" class="text-gray-900"></span></p>
+                            <p><span class="font-medium text-gray-500">Start Date:</span> <span id="view-start"></span></p>
+                            <p><span class="font-medium text-gray-500">Deadline:</span> <span id="view-deadline" class="font-bold"></span></p>
+                            <p><span class="font-medium text-gray-500">Submission Date:</span> <span id="view-submission"></span></p>
                         </div>
                     </div>
-                    
                     <div class="border-t pt-4">
-                        <h4 class="text-sm font-bold text-gray-900 mb-3"><i class="fas fa-comments text-gray-400 mr-2"></i>Progress Comments</h4>
-                        <div class="bg-gray-50 border rounded-md p-3 max-h-48 overflow-y-auto mb-4 text-sm" id="view-comments">
-                            <!-- Comments injected here -->
-                        </div>
-                        
+                        <h4 class="text-sm font-bold mb-3">Comments History</h4>
+                        <div class="bg-gray-50 border rounded-md p-3 max-h-48 overflow-y-auto mb-4 text-sm" id="view-comments"></div>
                         <div class="flex space-x-2">
-                            <input type="text" id="new-comment-input" placeholder="Add a new update..." class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
-                            <button onclick="addComment()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium">Add</button>
+                            <select id="new-comment-author" class="w-32 border rounded py-2 px-3 text-sm">
+                                <option value="Baile">Baile</option><option value="Lorain">Lorain</option>
+                            </select>
+                            <input type="text" id="new-comment-input" placeholder="Add an update..." class="flex-1 border rounded py-2 px-3 text-sm">
+                            <button onclick="addComment()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium">Add</button>
                         </div>
                     </div>
                 </div>
@@ -398,53 +342,27 @@
         </div>
     </div>
 
-    <!-- Delete Confirm Modal -->
+    <!-- Modal: Delete Confirmation -->
     <div id="delete-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-md sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <i class="fas fa-exclamation-triangle text-red-600"></i>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Delete Task</h3>
-                            <div class="mt-2">
-                                <p class="text-sm text-gray-500">Are you sure you want to delete this task? This action cannot be undone.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t">
-                    <button type="button" id="confirm-delete-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Delete
-                    </button>
-                    <button type="button" onclick="closeModal('delete-modal')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cancel
-                    </button>
+            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform sm:max-w-md sm:w-full bg-white px-6 pt-5 pb-6">
+                <h3 class="text-lg font-medium text-center text-gray-900">Delete Task?</h3>
+                <p class="text-sm text-gray-500 text-center mt-2">Are you sure you want to delete this task? This action cannot be undone.</p>
+                <div class="flex justify-center space-x-4 mt-6">
+                    <button onclick="confirmDelete()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium">Delete</button>
+                    <button onclick="closeModal('delete-modal')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm font-medium">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Generic Toast Modal -->
-    <div id="toast-modal" class="fixed top-5 right-5 bg-white border-l-4 border-blue-600 shadow-lg rounded p-4 hidden z-50 max-w-sm transition-opacity duration-300">
-        <div class="flex items-center">
-            <i class="fas fa-info-circle text-blue-600 text-xl mr-3"></i>
-            <p id="toast-msg" class="text-sm font-medium text-gray-800"></p>
-        </div>
+    <!-- Toast Notification -->
+    <div id="toast-modal" class="fixed top-5 right-5 bg-white border-l-4 border-blue-600 shadow-lg rounded p-4 hidden z-50 max-w-sm">
+        <p id="toast-msg" class="text-sm font-medium text-gray-800"></p>
     </div>
 
     <script>
-        window.APP_STATE = window.APP_STATE || {
-            tasks: [],
-            currentUser: null,
-            currentViewTaskId: null,
-            deleteTaskId: null,
-            sortCol: 'deadlineDate',
-            sortAsc: true,
-            reportData: []
-        };
+        window.APP_STATE = { tasks: [], currentUser: null, currentViewTaskId: null, deleteTaskId: null, sortCol: 'deadlineDate', sortAsc: true, reportData: [] };
         const OPTIONS = {
             bu: ['TBFS', 'Lipton', 'RCL', 'HBFS', 'PepsiCo'],
             subtask: ['Detection Errors', 'Stitching Errors', 'Recaptures', 'Tail SKUs', 'NPDs', 'Pack Change', 'Training Data: Include', 'Training Data: Exclude', 'Master Edits', 'Quality Control', 'Audit Call Cycle Tracking'],
@@ -456,35 +374,28 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: In Step 2 of the Deployment Guide, you will replace the following `firebaseConfig` object
-        // with the real configuration snippet from your newly created Firebase project.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'irtasktracker-default';
         const firebaseConfig = {
-  apiKey: "AIzaSyAP39b8nWnu55bPN_1TCl55Hr5RsWCxS6c",
-  authDomain: "ir-task-tracker.firebaseapp.com",
-  projectId: "ir-task-tracker",
-  storageBucket: "ir-task-tracker.firebasestorage.app",
-  messagingSenderId: "995915361733",
-  appId: "1:995915361733:web:24b8fd36cbce1726f06fac"
-};
+            apiKey: "AIzaSyAP39b8nWnu55bPN_1TCl55Hr5RsWCxS6c",
+            authDomain: "ir-task-tracker.firebaseapp.com",
+            projectId: "ir-task-tracker",
+            storageBucket: "ir-task-tracker.firebasestorage.app",
+            messagingSenderId: "995915361733",
+            appId: "1:995915361733:web:24b8fd36cbce1726f06fac"
+        };
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
         window.saveTask = async () => {
-            if (!window.APP_STATE.currentUser) {
-                showToast("Not authenticated. Please wait.");
-                return;
-            }
-
             const bu = getMultiselectValues('form-bu');
             const subtask = getMultiselectValues('form-subtask');
             const dependingOn = getMultiselectValues('form-depending-on');
             const people = getMultiselectValues('form-people');
+            const author = document.getElementById('form-author').value;
             const startDate = document.getElementById('form-start-date').value;
             const deadline = document.getElementById('form-deadline').value;
             const status = document.getElementById('form-status').value;
@@ -494,20 +405,12 @@
             let valid = true;
             if(!bu.length) { document.getElementById('err-bu').classList.remove('hidden'); valid = false; } else document.getElementById('err-bu').classList.add('hidden');
             if(!subtask.length) { document.getElementById('err-subtask').classList.remove('hidden'); valid = false; } else document.getElementById('err-subtask').classList.add('hidden');
-            if(!dependingOn.length) { document.getElementById('err-depending-on').classList.remove('hidden'); valid = false; } else document.getElementById('err-depending-on').classList.add('hidden');
             if(!people.length) { document.getElementById('err-people').classList.remove('hidden'); valid = false; } else document.getElementById('err-people').classList.add('hidden');
+            if(!author) { document.getElementById('err-author').classList.remove('hidden'); valid = false; } else document.getElementById('err-author').classList.add('hidden');
             
-            if(!startDate || !deadline || !status || !valid) {
-                showToast("Please fill all required fields correctly.");
-                return;
-            }
+            if(!startDate || !deadline || !valid) return;
 
-            if(new Date(deadline) < new Date(startDate)) {
-                showToast("Deadline cannot be earlier than start date.");
-                return;
-            }
-
-            const taskId = document.getElementById('task-id').value || 'task_' + Date.now() + '_' + Math.random().toString(36).substring(2,9);
+            const taskId = document.getElementById('task-id').value || 'task_' + Date.now();
             const initialCommentText = document.getElementById('form-initial-comment').value.trim();
             
             let existingComments = [];
@@ -517,117 +420,67 @@
             }
 
             if (initialCommentText) {
-                existingComments.push({
-                    date: new Date().toISOString(),
-                    user: 'Manager/User',
-                    text: initialCommentText
-                });
+                existingComments.push({ date: new Date().toISOString(), user: author, text: initialCommentText });
             }
 
-            const taskData = {
-                bu, subtask, dependingOn, people,
-                startDate, deadlineDate: deadline, submissionDate: submission || '',
-                status, priority, comments: existingComments,
-                updatedAt: new Date().toISOString()
-            };
+            const taskData = { bu, subtask, dependingOn, people, startDate, deadlineDate: deadline, submissionDate: submission || '', status, priority, comments: existingComments };
 
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'irtasks', taskId);
-                await setDoc(docRef, taskData);
-                closeModal('task-modal');
-                showToast("Task saved successfully!");
-            } catch (error) {
-                console.error("Error saving task: ", error);
-                showToast("Error saving task.");
-            }
+            await setDoc(doc(db, 'tasks', taskId), taskData);
+            closeModal('task-modal');
         };
 
         window.confirmDelete = async () => {
-            if (!window.APP_STATE.currentUser || !window.APP_STATE.deleteTaskId) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'irtasks', window.APP_STATE.deleteTaskId);
-                await deleteDoc(docRef);
-                closeModal('delete-modal');
-                showToast("Task deleted.");
-                window.APP_STATE.deleteTaskId = null;
-            } catch (error) {
-                console.error("Error deleting: ", error);
-            }
+            if (!window.APP_STATE.deleteTaskId) return;
+            await deleteDoc(doc(db, 'tasks', window.APP_STATE.deleteTaskId));
+            closeModal('delete-modal');
         };
 
         window.addComment = async () => {
-            const input = document.getElementById('new-comment-input');
-            const text = input.value.trim();
+            const text = document.getElementById('new-comment-input').value.trim();
+            const author = document.getElementById('new-comment-author').value;
             const taskId = window.APP_STATE.currentViewTaskId;
-            
-            if(!text || !taskId || !window.APP_STATE.currentUser) return;
+            if(!text || !taskId) return;
 
             const task = window.APP_STATE.tasks.find(t => t.id === taskId);
-            if(!task) return;
-
-            const newComment = {
-                date: new Date().toISOString(),
-                user: 'User Update', 
-                text: text
-            };
-
-            const updatedComments = [...(task.comments || []), newComment];
+            const newComment = { date: new Date().toISOString(), user: author, text: text };
+            await setDoc(doc(db, 'tasks', taskId), { ...task, comments: [...(task.comments || []), newComment] }, { merge: true });
             
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'irtasks', taskId);
-                await setDoc(docRef, { ...task, comments: updatedComments }, { merge: true });
-                input.value = '';
-                setTimeout(() => window.viewTask(taskId), 100); 
-            } catch(e) {
-                console.error(e);
-                showToast("Failed to add comment.");
-            }
+            document.getElementById('new-comment-input').value = '';
+            setTimeout(() => window.viewTask(taskId), 100); 
         };
 
-        async function initAuthAndData() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth error:", error);
+        try { await signInAnonymously(auth); } catch (err) { showError("Authentication Failed", err.message); }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.APP_STATE.currentUser = user;
+                onSnapshot(collection(db, 'tasks'), (snapshot) => {
+                    window.APP_STATE.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    document.getElementById('global-loader').classList.add('hidden');
+                    document.getElementById('tab-tracker').classList.remove('hidden');
+                    document.getElementById('tab-tracker').classList.add('flex');
+                    window.renderTrackerTable();
+                    if (document.getElementById('tab-insights').classList.contains('flex')) window.renderInsights();
+                }, (err) => { showError("Database Access Denied", err.message); });
             }
+        });
 
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    window.APP_STATE.currentUser = user;
-                    const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', 'irtasks');
-                    onSnapshot(tasksRef, (snapshot) => {
-                        window.APP_STATE.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        document.getElementById('global-loader').classList.add('hidden');
-                        document.getElementById('tab-tracker').classList.remove('hidden');
-                        document.getElementById('tab-tracker').classList.add('flex');
-                        
-                        window.renderTrackerTable();
-                        if (document.getElementById('tab-insights').classList.contains('flex')) {
-                            window.renderInsights();
-                        }
-                    }, (err) => {
-                        console.error("Firestore error:", err);
-                        document.getElementById('global-loader').innerHTML = `<p class='text-red-500'>Error loading data.</p>`;
-                    });
-                }
-            });
+        function showError(title, msg) {
+            document.getElementById('global-loader').classList.remove('hidden');
+            document.getElementById('tab-tracker').classList.add('hidden');
+            document.getElementById('loader-icon').className = "fas fa-exclamation-circle text-red-500 text-5xl mb-4";
+            document.getElementById('loader-text').innerHTML = `<span class="text-red-600 font-bold text-lg">${title}</span>`;
+            const errBox = document.getElementById('loader-error');
+            errBox.classList.remove('hidden');
+            errBox.innerHTML = `<p class="mb-2 font-semibold">${msg}</p>`;
         }
-
-        document.getElementById('confirm-delete-btn').addEventListener('click', window.confirmDelete);
-        initAuthAndData();
     </script>
 
     <script>
         function showToast(msg) {
-            const toast = document.getElementById('toast-msg');
-            toast.innerText = msg;
-            const container = document.getElementById('toast-modal');
-            container.classList.remove('hidden');
-            setTimeout(() => { container.classList.add('hidden'); }, 3000);
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('toast-modal').classList.add('hidden'), 3000);
         }
 
         function switchTab(tabId) {
@@ -635,12 +488,10 @@
                 const el = document.getElementById('tab-' + t);
                 const nav = document.getElementById('nav-' + t);
                 if(t === tabId) {
-                    el.classList.remove('hidden');
-                    el.classList.add('flex');
+                    el.classList.remove('hidden'); el.classList.add('flex');
                     nav.className = "tab-active inline-flex items-center px-1 pt-1 border-b-2 text-sm";
                 } else {
-                    el.classList.remove('flex');
-                    el.classList.add('hidden');
+                    el.classList.remove('flex'); el.classList.add('hidden');
                     nav.className = "tab-inactive inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm hover:border-gray-300";
                 }
             });
@@ -650,205 +501,123 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        function formatDateSA(isoString) {
-            if(!isoString) return '-';
-            const [y, m, d] = isoString.split('-');
-            return `${d}/${m}/${y}`;
+        function formatDateSA(s) { if(!s) return '-'; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
+        function formatDateTime(s) { if(!s) return ''; const dt = new Date(s); return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`; }
+        function isOverdue(dl) { if(!dl) return false; const today = new Date(); today.setHours(0,0,0,0); const d = new Date(dl); d.setHours(0,0,0,0); return d < today; }
+
+        function getPriorityClass(p, s) {
+            if (s === 'Completed') return 'priority-completed';
+            if (p === 'High Priority') return 'priority-high';
+            if (p === 'Medium Priority') return 'priority-medium';
+            return 'priority-low';
         }
-        
-        function formatDateTime(isoString) {
-            if(!isoString) return '';
-            const dt = new Date(isoString);
-            const d = String(dt.getDate()).padStart(2, '0');
-            const m = String(dt.getMonth()+1).padStart(2, '0');
-            const y = dt.getFullYear();
-            return `${d}/${m}/${y}`;
+        function getPriorityLevel(p, s) {
+            if (s === 'Completed') return 4;
+            if (p === 'High Priority') return 1;
+            if (p === 'Medium Priority') return 2;
+            return 3;
         }
-
-        function isOverdue(deadlineStr) {
-            if(!deadlineStr) return false;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const deadline = new Date(deadlineStr);
-            deadline.setHours(0, 0, 0, 0);
-            return deadline < today;
-        }
-
-        function getPriorityObj(priority, status) {
-            if (status === 'Completed') return { label: 'Completed', level: 4, class: 'priority-completed' };
-            if (priority === 'High Priority') return { label: 'High Priority', level: 1, class: 'priority-high' };
-            if (priority === 'Medium Priority') return { label: 'Medium Priority', level: 2, class: 'priority-medium' };
-            return { label: 'Low Priority', level: 3, class: 'priority-low' };
-        }
-
-        function createMultiselect(containerId, options, placeholder) {
-            const container = document.getElementById(containerId);
-            const html = `
-                <div class="relative custom-multiselect w-full text-sm">
-                    <div class="border border-gray-300 rounded-md shadow-sm py-2 px-3 cursor-pointer bg-white flex justify-between items-center" onclick="toggleMsDropdown(this)">
-                        <span class="ms-label truncate block">${placeholder}</span>
-                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                    </div>
-                    <div class="absolute bg-white border border-gray-200 mt-1 w-full max-h-48 overflow-y-auto hidden z-20 rounded shadow-lg ms-dropdown">
-                        ${options.map(opt => `
-                            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-700">
-                                <input type="checkbox" value="${opt}" class="mr-2 text-blue-600 focus:ring-blue-500 h-4 w-4 rounded" onchange="updateMsLabel(this, '${placeholder}')"> 
-                                <span>${opt}</span>
-                            </label>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            container.innerHTML = html;
-        }
-
-        function toggleMsDropdown(el) {
-            const dropdown = el.nextElementSibling;
-            document.querySelectorAll('.ms-dropdown').forEach(d => { if(d !== dropdown) d.classList.add('hidden'); });
-            dropdown.classList.toggle('hidden');
-        }
-
-        function updateMsLabel(checkbox, placeholder) {
-            const container = checkbox.closest('.custom-multiselect');
-            const checked = Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
-            const labelEl = container.querySelector('.ms-label');
-            if(checked.length === 0) labelEl.textContent = placeholder;
-            else if(checked.length <= 2) labelEl.textContent = checked.join(', ');
-            else labelEl.textContent = `${checked.length} selected`;
-        }
-
-        function getMultiselectValues(containerId) {
-            const container = document.getElementById(containerId);
-            if(!container) return [];
-            return Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
-        }
-
-        function setMultiselectValues(containerId, values, placeholder) {
-            const container = document.getElementById(containerId);
-            if(!container) return;
-            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(cb => { cb.checked = values.includes(cb.value); });
-            if(checkboxes.length) updateMsLabel(checkboxes[0], placeholder);
-        }
-
-        document.addEventListener('click', (e) => {
-            if(!e.target.closest('.custom-multiselect')) {
-                document.querySelectorAll('.ms-dropdown').forEach(d => d.classList.add('hidden'));
-            }
-        });
-
-        createMultiselect('form-bu', OPTIONS.bu, 'Select BU(s)');
-        createMultiselect('form-subtask', OPTIONS.subtask, 'Select Task(s)');
-        createMultiselect('form-depending-on', OPTIONS.dependingOn, 'Select Dept(s)');
-        createMultiselect('form-people', OPTIONS.people, 'Select People');
-        createMultiselect('report-bu-filter', OPTIONS.bu, 'Any BU');
-
-        function toggleSort(col) {
-            if(window.APP_STATE.sortCol === col) {
-                window.APP_STATE.sortAsc = !window.APP_STATE.sortAsc;
-            } else {
-                window.APP_STATE.sortCol = col;
-                window.APP_STATE.sortAsc = true;
-            }
-            renderTrackerTable();
-        }
-
-        function getStatusColor(status) {
-            switch(status) {
+        function getStatusColor(s) {
+            switch(s) {
                 case 'Completed': return 'bg-green-100 text-green-800 border-green-200 border';
                 case 'Not Started': return 'bg-gray-100 text-gray-800 border-gray-200 border';
                 case 'In Progress': return 'bg-blue-100 text-blue-800 border-blue-200 border';
                 case 'In Training': return 'bg-teal-100 text-teal-800 border-teal-200 border';
-                case 'Awaiting Review': return 'bg-purple-100 text-purple-800 border-purple-200 border';
-                case 'Submitted': return 'bg-indigo-100 text-indigo-800 border-indigo-200 border';
-                case 'On Hold': return 'bg-yellow-100 text-yellow-800 border-yellow-200 border';
-                default: return 'bg-gray-100 text-gray-800 border';
+                case 'Awaiting Review': return 'bg-amber-100 text-amber-800 border-amber-200 border';
+                case 'Submitted': return 'bg-purple-100 text-purple-800 border-purple-200 border';
+                case 'On Hold': return 'bg-gray-200 text-gray-800 border-gray-300 border';
+                default: return 'bg-gray-100 border';
             }
         }
 
-        function renderTrackerTable() {
-            const tbody = document.getElementById('tracker-tbody');
+        function createMultiselect(id, opts, p) {
+            document.getElementById(id).innerHTML = `
+                <div class="relative custom-multiselect w-full text-sm">
+                    <div class="border rounded py-2 px-3 cursor-pointer bg-white flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        <span class="ms-label truncate">${p}</span><i class="fas fa-chevron-down text-xs mt-1"></i>
+                    </div>
+                    <div class="absolute bg-white border mt-1 w-full max-h-48 overflow-y-auto hidden z-20 rounded shadow ms-dropdown">
+                        ${opts.map(o => `<label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer"><input type="checkbox" value="${o}" class="mr-2 rounded" onchange="updateMsLabel(this, '${p}')"><span>${o}</span></label>`).join('')}
+                    </div>
+                </div>`;
+        }
+        function updateMsLabel(cb, p) {
+            const cont = cb.closest('.custom-multiselect');
+            const chk = Array.from(cont.querySelectorAll('input:checked')).map(c=>c.value);
+            cont.querySelector('.ms-label').textContent = chk.length === 0 ? p : (chk.length <= 2 ? chk.join(', ') : `${chk.length} selected`);
+        }
+        function getMultiselectValues(id) { return Array.from(document.getElementById(id).querySelectorAll('input:checked')).map(c=>c.value); }
+        function setMultiselectValues(id, vals, p) {
+            const chks = document.getElementById(id).querySelectorAll('input[type="checkbox"]');
+            chks.forEach(c => c.checked = vals.includes(c.value));
+            if(chks.length) updateMsLabel(chks[0], p);
+        }
+        document.addEventListener('click', e => { if(!e.target.closest('.custom-multiselect')) document.querySelectorAll('.ms-dropdown').forEach(d=>d.classList.add('hidden')); });
+
+        createMultiselect('form-bu', OPTIONS.bu, 'Select BU');
+        createMultiselect('form-subtask', OPTIONS.subtask, 'Select Task');
+        createMultiselect('form-depending-on', OPTIONS.dependingOn, 'Select Dept');
+        createMultiselect('form-people', OPTIONS.people, 'Select People');
+        createMultiselect('report-bu-filter', OPTIONS.bu, 'Any BU');
+
+        function toggleSort(col) {
+            window.APP_STATE.sortAsc = window.APP_STATE.sortCol === col ? !window.APP_STATE.sortAsc : true;
+            window.APP_STATE.sortCol = col;
+            renderTrackerTable();
+        }
+
+        window.renderTrackerTable = function() {
             const search = document.getElementById('filter-search').value.toLowerCase();
             const statusF = document.getElementById('filter-status').value;
             const priorityF = document.getElementById('filter-priority').value;
             
-            let tasks = window.APP_STATE.tasks.map(t => {
-                const prio = getPriorityObj(t.priority, t.status);
-                const isTaskOverdue = t.status !== 'Completed' && isOverdue(t.deadlineDate);
-                return { ...t, prioLabel: prio.label, prioLevel: prio.level, prioClass: prio.class, isOverdue: isTaskOverdue };
-            });
-
-            tasks = tasks.filter(t => {
-                let match = true;
-                if(statusF && t.status !== statusF) match = false;
-                
-                if(priorityF) {
-                    if (priorityF === 'Overdue' && !t.isOverdue) match = false;
-                    else if (priorityF === 'Due Today' && t.deadlineDate !== new Date().toISOString().split('T')[0]) match = false;
-                    else if (['High Priority', 'Medium Priority', 'Low Priority'].includes(priorityF) && t.priority !== priorityF) match = false;
-                }
-                
-                if(search) {
-                    const searchStr = `${t.bu.join(' ')} ${t.subtask.join(' ')} ${t.people.join(' ')} ${t.status} ${(t.comments||[]).map(c=>c.text).join(' ')}`.toLowerCase();
-                    if(!searchStr.includes(search)) match = false;
-                }
-                return match;
+            let tasks = window.APP_STATE.tasks.filter(t => {
+                if(statusF && t.status !== statusF) return false;
+                if(priorityF && t.priority !== priorityF) return false;
+                if(search) return `${t.bu} ${t.subtask} ${t.people} ${t.status} ${(t.comments||[]).map(c=>c.text).join(' ')}`.toLowerCase().includes(search);
+                return true;
             });
 
             document.getElementById('stat-total').innerText = tasks.length;
             document.getElementById('stat-open').innerText = tasks.filter(t=>t.status !== 'Completed').length;
             document.getElementById('stat-completed').innerText = tasks.filter(t=>t.status === 'Completed').length;
-            document.getElementById('stat-overdue').innerText = tasks.filter(t=>t.isOverdue).length;
+            document.getElementById('stat-overdue').innerText = tasks.filter(t=>t.status !== 'Completed' && isOverdue(t.deadlineDate)).length;
 
-            tasks.sort((a, b) => {
-                let valA, valB;
-                const col = window.APP_STATE.sortCol;
-                if(col === 'priority') { valA = a.prioLevel; valB = b.prioLevel; }
-                else if(col === 'startDate') { valA = new Date(a.startDate).getTime(); valB = new Date(b.startDate).getTime(); }
-                else if(col === 'deadlineDate') { valA = new Date(a.deadlineDate).getTime(); valB = new Date(b.deadlineDate).getTime(); }
-                else { valA = 0; valB = 0; }
-
-                if(valA < valB) return window.APP_STATE.sortAsc ? -1 : 1;
-                if(valA > valB) return window.APP_STATE.sortAsc ? 1 : -1;
+            tasks.sort((a,b) => {
+                let vA = a[window.APP_STATE.sortCol], vB = b[window.APP_STATE.sortCol];
+                if(window.APP_STATE.sortCol === 'priority') { vA = getPriorityLevel(a.priority, a.status); vB = getPriorityLevel(b.priority, b.status); }
+                if(vA < vB) return window.APP_STATE.sortAsc ? -1 : 1;
+                if(vA > vB) return window.APP_STATE.sortAsc ? 1 : -1;
                 return 0;
             });
 
-            if(tasks.length === 0) {
-                tbody.innerHTML = '';
-                document.getElementById('tracker-empty').classList.remove('hidden');
-                return;
-            }
+            const tbody = document.getElementById('tracker-tbody');
+            if(!tasks.length) { tbody.innerHTML = ''; document.getElementById('tracker-empty').classList.remove('hidden'); return; }
             document.getElementById('tracker-empty').classList.add('hidden');
 
             tbody.innerHTML = tasks.map(t => {
-                const latestComment = (t.comments && t.comments.length > 0) ? t.comments[t.comments.length-1].text : '-';
-                return `
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-4 py-3 whitespace-nowrap">${t.bu.join(', ')}</td>
-                        <td class="px-4 py-3 text-xs">
-                            ${t.subtask.slice(0,2).join(', ')}${t.subtask.length > 2 ? ` <span class="text-gray-400">+${t.subtask.length-2}</span>` : ''}
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap">${formatDateSA(t.startDate)}</td>
-                        <td class="px-4 py-3 whitespace-nowrap font-medium ${t.isOverdue ? 'text-red-600' : ''}">${formatDateSA(t.deadlineDate)}</td>
-                        <td class="px-4 py-3 text-xs">${t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : '-'}</td>
-                        <td class="px-4 py-3 text-xs">${t.people.join(', ')}</td>
-                        <td class="px-4 py-3 whitespace-nowrap">${formatDateSA(t.submissionDate)}</td>
-                        <td class="px-4 py-3 text-xs truncate max-w-xs text-gray-500" title="${latestComment}">${latestComment}</td>
-                        <td class="px-4 py-3 whitespace-nowrap"><span class="status-badge ${getStatusColor(t.status)}">${t.status}</span></td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="px-2 py-1 rounded text-xs font-semibold ${t.prioClass}">${t.prioLabel}</span>
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                            <button onclick="viewTask('${t.id}')" class="text-blue-600 hover:text-blue-900 mr-3" title="View/Comment"><i class="fas fa-eye"></i></button>
-                            <button onclick="editTask('${t.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit"><i class="fas fa-edit"></i></button>
-                            <button onclick="promptDelete('${t.id}')" class="text-red-600 hover:text-red-900" title="Delete"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
+                const lc = (t.comments && t.comments.length) ? t.comments[t.comments.length-1] : null;
+                const lcText = lc ? `${lc.user}: ${lc.text}` : '-';
+                return `<tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3">${t.bu.join(', ')}</td>
+                    <td class="px-4 py-3 text-xs">${t.subtask.join(', ')}</td>
+                    <td class="px-4 py-3">${formatDateSA(t.startDate)}</td>
+                    <td class="px-4 py-3 ${(t.status !== 'Completed' && isOverdue(t.deadlineDate)) ? 'text-red-600 font-bold' : ''}">${formatDateSA(t.deadlineDate)}</td>
+                    <td class="px-4 py-3 text-xs">${t.dependingOn ? t.dependingOn.join(', ') : '-'}</td>
+                    <td class="px-4 py-3 text-xs">${t.people.join(', ')}</td>
+                    <td class="px-4 py-3">${formatDateSA(t.submissionDate)}</td>
+                    <td class="px-4 py-3 text-xs truncate max-w-xs text-gray-500" title="${lcText}">${lcText}</td>
+                    <td class="px-4 py-3"><span class="status-badge ${getStatusColor(t.status)}">${t.status}</span></td>
+                    <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs font-semibold ${getPriorityClass(t.priority, t.status)}">${t.status==='Completed'?'Completed':t.priority}</span></td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
+                        <button onclick="viewTask('${t.id}')" title="View Details" class="text-blue-600 hover:text-blue-900 mr-3"><i class="fas fa-eye"></i></button>
+                        <button onclick="editTask('${t.id}')" title="Edit Task" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-edit"></i></button>
+                        <button onclick="promptDelete('${t.id}')" title="Delete Task" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                    </td></tr>`;
             }).join('');
-        }
+        };
 
-        function clearTrackerFilters() {
+        window.clearTrackerFilters = function() {
             document.getElementById('filter-search').value = '';
             document.getElementById('filter-status').value = '';
             document.getElementById('filter-priority').value = '';
@@ -858,364 +627,236 @@
         window.openAddTaskModal = function() {
             document.getElementById('task-id').value = '';
             document.getElementById('task-modal-title').innerText = 'Add New Task';
-            setMultiselectValues('form-bu', [], 'Select BU(s)');
-            setMultiselectValues('form-subtask', [], 'Select Task(s)');
-            setMultiselectValues('form-depending-on', [], 'Select Dept(s)');
-            setMultiselectValues('form-people', [], 'Select People');
-            document.getElementById('form-start-date').value = '';
-            document.getElementById('form-deadline').value = '';
-            document.getElementById('form-submission').value = '';
-            document.getElementById('form-status').value = 'Not Started';
-            document.getElementById('form-priority').value = 'Medium Priority';
-            document.getElementById('form-initial-comment').value = '';
-            
+            setMultiselectValues('form-bu', [], 'Select BU'); setMultiselectValues('form-subtask', [], 'Select Task');
+            setMultiselectValues('form-depending-on', [], 'Select Dept'); setMultiselectValues('form-people', [], 'Select People');
+            document.getElementById('form-start-date').value = ''; document.getElementById('form-deadline').value = '';
+            document.getElementById('form-status').value = 'Not Started'; document.getElementById('form-priority').value = 'Medium Priority';
+            document.getElementById('form-author').value = ''; document.getElementById('form-initial-comment').value = '';
+            document.querySelectorAll('#task-form p.text-red-500').forEach(e=>e.classList.add('hidden'));
             openModal('task-modal');
         }
 
         window.editTask = function(id) {
-            const t = window.APP_STATE.tasks.find(x => x.id === id);
-            if(!t) return;
-            
-            document.getElementById('task-id').value = t.id;
-            document.getElementById('task-modal-title').innerText = 'Edit Task Details';
-            
-            setMultiselectValues('form-bu', t.bu, 'Select BU(s)');
-            setMultiselectValues('form-subtask', t.subtask, 'Select Task(s)');
-            setMultiselectValues('form-depending-on', t.dependingOn || [], 'Select Dept(s)');
-            setMultiselectValues('form-people', t.people, 'Select People');
-            
-            document.getElementById('form-start-date').value = t.startDate;
-            document.getElementById('form-deadline').value = t.deadlineDate;
-            document.getElementById('form-submission').value = t.submissionDate || '';
-            document.getElementById('form-status').value = t.status;
+            const t = window.APP_STATE.tasks.find(x => x.id === id); if(!t) return;
+            document.getElementById('task-id').value = t.id; document.getElementById('task-modal-title').innerText = 'Edit Task';
+            setMultiselectValues('form-bu', t.bu, 'Select BU'); setMultiselectValues('form-subtask', t.subtask, 'Select Task');
+            setMultiselectValues('form-depending-on', t.dependingOn || [], 'Select Dept'); setMultiselectValues('form-people', t.people, 'Select People');
+            document.getElementById('form-start-date').value = t.startDate; document.getElementById('form-deadline').value = t.deadlineDate;
+            document.getElementById('form-submission').value = t.submissionDate || ''; document.getElementById('form-status').value = t.status;
             document.getElementById('form-priority').value = t.priority || 'Medium Priority';
-            document.getElementById('form-initial-comment').value = ''; 
-
+            document.getElementById('form-author').value = ''; document.getElementById('form-initial-comment').value = '';
+            document.querySelectorAll('#task-form p.text-red-500').forEach(e=>e.classList.add('hidden'));
             openModal('task-modal');
         }
 
-        window.promptDelete = function(id) {
-            window.APP_STATE.deleteTaskId = id;
-            openModal('delete-modal');
-        }
+        window.promptDelete = function(id) { window.APP_STATE.deleteTaskId = id; openModal('delete-modal'); }
 
         window.viewTask = function(id) {
-            const t = window.APP_STATE.tasks.find(x => x.id === id);
-            if(!t) return;
+            const t = window.APP_STATE.tasks.find(x => x.id === id); if(!t) return;
             window.APP_STATE.currentViewTaskId = id;
-
-            document.getElementById('view-bu').innerText = t.bu.join(', ');
-            document.getElementById('view-subtask').innerText = t.subtask.join(', ');
-            document.getElementById('view-depending-on').innerText = t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : '-';
-            document.getElementById('view-people').innerText = t.people.join(', ');
-            document.getElementById('view-start').innerText = formatDateSA(t.startDate);
-            document.getElementById('view-deadline').innerText = formatDateSA(t.deadlineDate);
-            document.getElementById('view-submission').innerText = formatDateSA(t.submissionDate);
-            
+            document.getElementById('view-bu').innerText = t.bu.join(', '); document.getElementById('view-subtask').innerText = t.subtask.join(', ');
+            document.getElementById('view-depending-on').innerText = t.dependingOn ? t.dependingOn.join(', ') : '-';
+            document.getElementById('view-people').innerText = t.people.join(', '); document.getElementById('view-start').innerText = formatDateSA(t.startDate);
+            document.getElementById('view-deadline').innerText = formatDateSA(t.deadlineDate); document.getElementById('view-submission').innerText = formatDateSA(t.submissionDate);
             document.getElementById('view-status').innerHTML = `<span class="status-badge ${getStatusColor(t.status)}">${t.status}</span>`;
+            document.getElementById('view-priority').innerHTML = `<span class="px-2 py-1 rounded text-xs font-semibold ${getPriorityClass(t.priority, t.status)}">${t.status==='Completed'?'Completed':t.priority}</span>`;
             
-            const prio = getPriorityObj(t.priority, t.status);
-            document.getElementById('view-priority').innerHTML = `<span class="px-2 py-1 rounded text-xs font-semibold ${prio.class}">${prio.label}</span>`;
-
-            const commsDiv = document.getElementById('view-comments');
-            if(t.comments && t.comments.length > 0) {
-                commsDiv.innerHTML = t.comments.map(c => `
-                    <div class="mb-2 pb-2 border-b border-gray-200 last:border-0">
-                        <span class="text-xs font-bold text-gray-500">${formatDateTime(c.date)} &mdash; ${c.user}:</span> 
-                        <span class="text-gray-800">${c.text}</span>
-                    </div>
-                `).join('');
-            } else {
-                commsDiv.innerHTML = '<p class="text-gray-400 italic">No comments yet.</p>';
-            }
-
+            const comms = document.getElementById('view-comments');
+            comms.innerHTML = (t.comments && t.comments.length) ? t.comments.map(c => `<div class="mb-2 pb-2 border-b"><span class="font-bold text-gray-700">${formatDateTime(c.date)} - ${c.user}:</span> <span class="text-gray-600">${c.text}</span></div>`).join('') : '<p class="italic text-gray-400">No comments</p>';
             openModal('view-modal');
-        }
-
-        window.resetReportFilters = function() {
-            setMultiselectValues('report-bu-filter', [], 'Any BU');
-            document.getElementById('report-preview-section').classList.add('hidden');
         }
 
         window.generateReport = function() {
             const bu = getMultiselectValues('report-bu-filter');
-
-            let filtered = window.APP_STATE.tasks.map(t => ({...t, prioObj: getPriorityObj(t.priority, t.status)}));
-            if(bu.length) filtered = filtered.filter(t => t.bu.some(b => bu.includes(b)));
-
-            window.APP_STATE.reportData = filtered;
-            document.getElementById('report-count').innerText = filtered.length;
+            let data = window.APP_STATE.tasks;
+            if(bu.length) data = data.filter(t => t.bu.some(b => bu.includes(b)));
+            window.APP_STATE.reportData = data;
+            document.getElementById('report-count').innerText = data.length;
             
-            const tbody = document.getElementById('report-tbody');
-            if(filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="px-3 py-4 text-center text-gray-500">No matching tasks found.</td></tr>';
-            } else {
-                tbody.innerHTML = filtered.map(t => {
-                    const commentsHtml = t.comments && t.comments.length > 0 
-                        ? t.comments.map(c => `<div style="margin-bottom: 4px;">• ${formatDateTime(c.date)}: ${c.text}</div>`).join('')
-                        : '-';
-                    return `
-                    <tr>
-                        <td class="px-3 py-2 whitespace-nowrap">${t.bu.join(', ')}</td>
-                        <td class="px-3 py-2 text-xs truncate max-w-xs">${t.subtask.join(', ')}</td>
-                        <td class="px-3 py-2 whitespace-nowrap">${formatDateSA(t.startDate)}</td>
-                        <td class="px-3 py-2 whitespace-nowrap">${formatDateSA(t.deadlineDate)}</td>
-                        <td class="px-3 py-2 text-xs">${t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : '-'}</td>
-                        <td class="px-3 py-2 whitespace-nowrap">${formatDateSA(t.submissionDate)}</td>
-                        <td class="px-3 py-2 text-xs">${t.people.join(', ')}</td>
-                        <td class="px-3 py-2 whitespace-nowrap">${t.status}</td>
-                        <td class="px-3 py-2 whitespace-nowrap">${t.prioObj.label}</td>
-                        <td class="px-3 py-2 min-w-[250px] text-gray-600 text-xs">${commentsHtml}</td>
-                    </tr>
-                `}).join('');
-            }
-            
+            document.getElementById('report-tbody').innerHTML = data.length ? data.map(t => `
+                <tr><td class="px-3 py-2 font-medium">${t.bu.join(', ')}</td><td class="px-3 py-2 text-xs">${t.subtask.join(', ')}</td>
+                <td class="px-3 py-2">${formatDateSA(t.startDate)}</td><td class="px-3 py-2">${formatDateSA(t.deadlineDate)}</td>
+                <td class="px-3 py-2 text-xs">${t.dependingOn ? t.dependingOn.join(', ') : '-'}</td><td class="px-3 py-2">${formatDateSA(t.submissionDate)}</td>
+                <td class="px-3 py-2 text-xs">${t.people.join(', ')}</td><td class="px-3 py-2">${t.status}</td><td class="px-3 py-2">${t.priority}</td>
+                <td class="px-3 py-2 text-xs">${(t.comments||[]).map(c=>`• [${c.user}]: ${c.text}`).join('<br>')}</td></tr>
+            `).join('') : '<tr><td colspan="10" class="text-center py-4 text-gray-500">No tasks found</td></tr>';
             document.getElementById('report-preview-section').classList.remove('hidden');
         }
+        window.resetReportFilters = function() { setMultiselectValues('report-bu-filter', [], 'Any BU'); document.getElementById('report-preview-section').classList.add('hidden'); }
 
         window.downloadCSV = function() {
-            if(!window.APP_STATE.reportData.length) return showToast("No data to download.");
-            let csv = "BU,Task,Start Date,Deadline Date,Depending On,Submission Date,People,Status,Priority,Comments\n";
-            window.APP_STATE.reportData.forEach(t => {
-                const formattedComments = (t.comments && t.comments.length > 0)
-                    ? `"${t.comments.map(c => `- ${formatDateTime(c.date)}: ${c.text}`).join('\n').replace(/"/g, '""')}"`
-                    : `""`;
-                
-                csv += `"${t.bu.join(', ')}","${t.subtask.join(', ')}","${formatDateSA(t.startDate)}","${formatDateSA(t.deadlineDate)}","${t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : ''}","${formatDateSA(t.submissionDate)}","${t.people.join(', ')}","${t.status}","${t.prioObj.label}",${formattedComments}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const data = window.APP_STATE.reportData;
+            if(!data || !data.length) { showToast("No report data to export"); return; }
+            const headers = ["BU", "Tasks", "Start Date", "Deadline", "Depending On", "Submission Date", "People", "Status", "Priority", "Comments"];
+            const rows = data.map(t => [
+                `"${t.bu.join('; ')}"`,
+                `"${t.subtask.join('; ')}"`,
+                formatDateSA(t.startDate),
+                formatDateSA(t.deadlineDate),
+                `"${(t.dependingOn || []).join('; ')}"`,
+                formatDateSA(t.submissionDate),
+                `"${t.people.join('; ')}"`,
+                t.status,
+                t.priority,
+                `"${(t.comments || []).map(c => `[${c.user}]: ${c.text}`).join(' | ')}"`
+            ]);
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+            const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `IR_Tracker_Report_${new Date().getTime()}.csv`);
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `IR_Task_Report_${new Date().toISOString().slice(0,10)}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        }
+        };
 
         window.downloadPDF = function() {
-            if(!window.APP_STATE.reportData.length) return showToast("No data to download.");
+            const data = window.APP_STATE.reportData;
+            if(!data || !data.length) { showToast("No report data to export"); return; }
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('landscape');
+            const doc = new jsPDF('l', 'pt');
+            doc.text("IR Task & Project Tracker - Report", 40, 40);
             
-            doc.setFontSize(16);
-            doc.text("IR Task & Project Tracker Report", 14, 15);
-            doc.setFontSize(10);
-            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
-
-            const tableData = window.APP_STATE.reportData.map(t => [
+            const tableData = data.map(t => [
                 t.bu.join(', '),
                 t.subtask.join(', '),
                 formatDateSA(t.startDate),
                 formatDateSA(t.deadlineDate),
-                t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : '-',
-                formatDateSA(t.submissionDate),
+                (t.dependingOn || []).join(', '),
                 t.people.join(', '),
                 t.status,
-                t.prioObj.label,
-                (t.comments||[]).map(c=> `- ${formatDateTime(c.date)}: ${c.text}`).join('\n')
+                t.priority
             ]);
 
             doc.autoTable({
-                startY: 28,
-                head: [['BU', 'Task', 'Start Date', 'Deadline', 'Depending On', 'Submission', 'People', 'Status', 'Priority', 'Comments']],
+                head: [["BU", "Task", "Start", "Deadline", "Depending On", "People", "Status", "Priority"]],
                 body: tableData,
-                theme: 'grid',
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [37, 99, 235] },
-                columnStyles: { 9: { cellWidth: 70 } }
+                startY: 60,
+                styles: { fontSize: 8 }
             });
-
-            doc.save(`IR_Report_${new Date().getTime()}.pdf`);
-        }
+            doc.save(`IR_Task_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+        };
 
         window.renderInsights = function() {
-            const tasks = window.APP_STATE.tasks;
-            const enhancedTasks = tasks.map(t => ({...t, prioObj: getPriorityObj(t.priority, t.status)}));
-            
-            const total = tasks.length;
-            const comp = enhancedTasks.filter(t => t.status === 'Completed').length;
-            const overdue = enhancedTasks.filter(t => t.status !== 'Completed' && isOverdue(t.deadlineDate)).length;
-            const high = enhancedTasks.filter(t => t.priority === 'High Priority' && t.status !== 'Completed').length;
-            const review = enhancedTasks.filter(t => t.status === 'Awaiting Review').length;
+            const allTasks = window.APP_STATE.tasks;
+            const activeTasks = allTasks.filter(t => t.status !== 'Completed');
+            const overdueActive = activeTasks.filter(t => isOverdue(t.deadlineDate));
+            const completedCount = allTasks.filter(t => t.status === 'Completed').length;
 
-            document.getElementById('in-total').innerText = total;
-            document.getElementById('in-completion').innerText = total ? Math.round((comp/total)*100) + '%' : '0%';
-            document.getElementById('in-overdue').innerText = overdue;
-            document.getElementById('in-high').innerText = high;
-            document.getElementById('in-review').innerText = review;
-
-            const recList = document.getElementById('insights-recommendations');
-            let recs = [];
-            if(overdue > 0) recs.push(`<b>${overdue} tasks are overdue.</b> Follow up with the assigned team members immediately.`);
-            if(review > 0) recs.push(`<b>${review} tasks are awaiting review.</b> Clear these to maintain momentum.`);
-            
-            const approachingNoSub = enhancedTasks.filter(t => t.priority === 'High Priority' && !t.submissionDate && t.status !== 'Completed');
-            if(approachingNoSub.length > 0) recs.push(`<b>${approachingNoSub.length} high priority tasks</b> have not been submitted yet.`);
-            
-            let buCounts = {};
-            tasks.forEach(t => t.bu.forEach(b => buCounts[b] = (buCounts[b]||0)+1));
-            const maxBu = Object.keys(buCounts).sort((a,b)=>buCounts[b]-buCounts[a])[0];
-            if(maxBu && buCounts[maxBu] > 0) recs.push(`<b>${maxBu}</b> has the highest number of overall tasks (${buCounts[maxBu]}).`);
-
-            const subNoDate = enhancedTasks.filter(t => t.status === 'Submitted' && !t.submissionDate).length;
-            if(subNoDate > 0) recs.push(`<b>${subNoDate} tasks</b> are marked as 'Submitted' but have no Submission Date recorded.`);
-
-            if(recs.length === 0) recs.push("All clear! No critical action points right now.");
-            recList.innerHTML = recs.map(r => `<li>${r}</li>`).join('');
+            document.getElementById('in-total').innerText = activeTasks.length;
+            document.getElementById('in-completion').innerText = allTasks.length ? Math.round((completedCount / allTasks.length) * 100) + '%' : '0%';
+            document.getElementById('in-overdue').innerText = overdueActive.length;
+            document.getElementById('in-high').innerText = activeTasks.filter(t => t.priority === 'High Priority').length;
+            document.getElementById('in-review').innerText = activeTasks.filter(t => t.status === 'Awaiting Review').length;
 
             const attList = document.getElementById('insights-attention');
-            const attItems = enhancedTasks.filter(t => 
-                (t.status !== 'Completed' && isOverdue(t.deadlineDate)) ||
-                (t.priority === 'High Priority' && t.status !== 'Completed') ||
-                t.status === 'Awaiting Review' ||
-                (t.status === 'On Hold')
-            ).sort((a,b) => {
-                const aOver = (a.status !== 'Completed' && isOverdue(a.deadlineDate)) ? 0 : 1;
-                const bOver = (b.status !== 'Completed' && isOverdue(b.deadlineDate)) ? 0 : 1;
-                if(aOver !== bOver) return aOver - bOver;
-                return a.prioObj.level - b.prioObj.level;
-            }); 
-
-            if(attItems.length === 0) {
-                attList.innerHTML = '<p class="text-gray-500 italic text-sm">Nothing requires immediate attention.</p>';
-            } else {
-                attList.innerHTML = attItems.slice(0, 20).map(t => { 
-                    let reason = t.prioObj.label;
-                    if(t.status !== 'Completed' && isOverdue(t.deadlineDate)) reason = 'Overdue';
-                    else if(t.status === 'Awaiting Review') reason = 'Needs Review';
-                    else if(t.status === 'On Hold') reason = 'On Hold';
-                    
-                    let badgeClass = t.prioObj.class;
-                    if (reason === 'Overdue') badgeClass = 'bg-red-100 text-red-800 border-red-200 border';
-
-                    return `
-                    <div class="flex justify-between items-center p-3 bg-red-50 rounded border border-red-100 mb-3">
-                        <div class="flex-1">
-                            <div class="flex space-x-2 items-center mb-1">
-                                <span class="font-bold text-sm text-gray-900">${t.bu.join(', ')}</span>
-                                <span class="px-2 py-0.5 text-xs font-semibold rounded ${badgeClass}">${reason}</span>
-                            </div>
-                            <p class="text-xs text-gray-700">${t.subtask.join(', ')} &mdash; Assigned: ${t.people.join(', ')}</p>
-                            <p class="text-xs text-gray-500 mt-1">Deadline: ${formatDateSA(t.deadlineDate)}</p>
+            const attItems = activeTasks.filter(t => isOverdue(t.deadlineDate) || t.priority === 'High Priority' || t.status === 'Awaiting Review');
+            
+            attList.innerHTML = attItems.length ? attItems.map(t => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded border hover:bg-gray-100 transition-colors">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-sm text-gray-900">${t.bu.join(', ')}</span>
+                            ${isOverdue(t.deadlineDate) ? '<span class="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold">OVERDUE</span>' : ''}
+                            ${t.priority === 'High Priority' ? '<span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-semibold">HIGH</span>' : ''}
+                            ${t.status === 'Awaiting Review' ? '<span class="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-semibold">REVIEW</span>' : ''}
                         </div>
-                        <button onclick="viewTask('${t.id}')" class="ml-4 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded shadow-sm text-xs font-medium">View</button>
+                        <p class="text-xs text-gray-600 mt-1">${t.subtask.join(', ')} • <span class="text-gray-500">Due: ${formatDateSA(t.deadlineDate)}</span></p>
                     </div>
-                `}).join('');
-            }
+                    <button onclick="viewTask('${t.id}')" class="bg-white border text-gray-700 hover:bg-gray-50 px-3 py-1 text-xs rounded font-medium shadow-sm">View</button>
+                </div>`).join('') : '<p class="italic text-gray-500">All clear! No critical active tasks requiring immediate intervention.</p>';
 
-            renderCharts(enhancedTasks);
+            renderCharts(activeTasks);
         }
 
-        function renderCharts(tasks) {
-            const valueLabelsPlugin = {
-                id: 'valueLabels',
-                afterDatasetsDraw(chart) {
-                    const { ctx, data } = chart;
-                    ctx.save();
-                    chart.getDatasetMeta(0).data.forEach((datapoint, index) => {
-                        const value = data.datasets[0].data[index];
-                        ctx.fillStyle = '#475569';
-                        ctx.font = 'bold 12px Inter, sans-serif';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(value, datapoint.x + 6, datapoint.y);
-                    });
-                    ctx.restore();
-                }
-            };
+        function renderCharts(activeTasks) {
+            // Chart 1: Active Statuses (excluding 'Completed')
+            const ctxS = document.getElementById('chartStatus').getContext('2d');
+            const activeStatusLabels = ['Not Started', 'In Progress', 'In Training', 'Awaiting Review', 'Submitted', 'On Hold'];
+            const statusCounts = {}; 
+            activeStatusLabels.forEach(l => statusCounts[l] = 0); 
+            activeTasks.forEach(t => { 
+                if (statusCounts[t.status] !== undefined) statusCounts[t.status]++; 
+            });
+            
+            const maxStatusVal = Math.max(...Object.values(statusCounts), 5);
 
-            const ctxStatus = document.getElementById('chartStatus').getContext('2d');
-            const statusLabels = ['Not Started', 'In Progress', 'In Training', 'Awaiting Review', 'Submitted', 'Completed', 'On Hold'];
-            const statusColors = {
-                'Not Started': '#94a3b8', 
-                'In Progress': '#3b82f6',
-                'In Training': '#14b8a6', 
-                'Awaiting Review': '#f59e0b', 
-                'Submitted': '#8b5cf6', 
-                'Completed': '#22c55e', 
-                'On Hold': '#475569'      
-            };
-            const statusCounts = {'Not Started':0, 'In Progress':0, 'In Training':0, 'Awaiting Review':0, 'Submitted':0, 'Completed':0, 'On Hold':0};
-            
-            tasks.forEach(t => { 
-                if(statusCounts[t.status] !== undefined) statusCounts[t.status]++; 
-            });
-            
-            if(window.charts.status) window.charts.status.destroy();
-            window.charts.status = new Chart(ctxStatus, {
-                type: 'bar',
-                data: {
-                    labels: statusLabels,
-                    datasets: [{
-                        data: statusLabels.map(l => statusCounts[l]),
-                        backgroundColor: statusLabels.map(l => statusColors[l]),
-                        borderRadius: 4,
-                        barPercentage: 0.6
-                    }]
-                },
-                options: { 
-                    indexAxis: 'y', 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    layout: { padding: { right: 30 } }, 
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: { enabled: true }
-                    },
-                    scales: { 
-                        x: { display: false, beginAtZero: true, suggestedMax: Math.max(...Object.values(statusCounts), 5) },
-                        y: { 
-                            grid: { display: false }, 
-                            border: { display: false },
-                            ticks: { font: { family: 'Inter, sans-serif', size: 11 }, color: '#334155' }
-                        }
-                    }
-                },
-                plugins: [valueLabelsPlugin]
-            });
-
-            const ctxBU = document.getElementById('chartBU').getContext('2d');
-            const buLabels = ['TBFS', 'Lipton', 'RCL', 'HBFS', 'PepsiCo'];
-            const buCounts = {'TBFS':0, 'Lipton':0, 'RCL':0, 'HBFS':0, 'PepsiCo':0};
-            
-            tasks.forEach(t => { 
-                t.bu.forEach(b => { 
-                    if(buCounts[b] !== undefined) buCounts[b]++; 
-                }); 
-            });
-            
-            if(window.charts.bu) window.charts.bu.destroy();
-            window.charts.bu = new Chart(ctxBU, {
-                type: 'bar',
-                data: {
-                    labels: buLabels,
-                    datasets: [{
-                        data: buLabels.map(l => buCounts[l]),
+            if (window.charts.status) window.charts.status.destroy();
+            window.charts.status = new Chart(ctxS, { 
+                type: 'bar', 
+                data: { 
+                    labels: activeStatusLabels, 
+                    datasets: [{ 
+                        data: Object.values(statusCounts), 
                         backgroundColor: '#3b82f6',
-                        borderRadius: 4,
-                        barPercentage: 0.6
-                    }]
-                },
+                        borderRadius: 4
+                    }] 
+                }, 
                 options: { 
                     indexAxis: 'y', 
                     responsive: true, 
                     maintainAspectRatio: false, 
-                    layout: { padding: { right: 30 } }, 
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: { enabled: true }
-                    },
-                    scales: { 
-                        x: { display: false, beginAtZero: true, suggestedMax: Math.max(...Object.values(buCounts), 5) },
-                        y: { 
-                            grid: { display: false }, 
-                            border: { display: false },
-                            ticks: { font: { family: 'Inter, sans-serif', size: 11 }, color: '#334155' }
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            suggestedMax: maxStatusVal > 20 ? maxStatusVal + 5 : 10,
+                            ticks: {
+                                precision: 0,
+                                stepSize: 1
+                            },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        y: {
+                            grid: { display: false }
                         }
                     }
-                },
-                plugins: [valueLabelsPlugin]
+                } 
+            });
+
+            // Chart 2: Active Business Units
+            const ctxB = document.getElementById('chartBU').getContext('2d');
+            const buCounts = {}; 
+            OPTIONS.bu.forEach(b => buCounts[b] = 0); 
+            activeTasks.forEach(t => {
+                t.bu.forEach(b => { 
+                    if (buCounts[b] !== undefined) buCounts[b]++; 
+                });
+            });
+            
+            const maxBUVal = Math.max(...Object.values(buCounts), 5);
+
+            if (window.charts.bu) window.charts.bu.destroy();
+            window.charts.bu = new Chart(ctxB, { 
+                type: 'bar', 
+                data: { 
+                    labels: OPTIONS.bu, 
+                    datasets: [{ 
+                        data: Object.values(buCounts), 
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 4
+                    }] 
+                }, 
+                options: { 
+                    indexAxis: 'y', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            suggestedMax: maxBUVal > 20 ? maxBUVal + 5 : 10,
+                            ticks: {
+                                precision: 0,
+                                stepSize: 1
+                            },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    }
+                } 
             });
         }
     </script>
