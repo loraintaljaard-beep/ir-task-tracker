@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IR Task & Project Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
+        .tab-inactive { color: #64748b; font-weight: 500; }
+        .tab-inactive:hover { color: #3b82f6; }
+        
+        /* Custom Scrollbar for tables */
+        .table-container::-webkit-scrollbar { height: 8px; width: 8px; }
+        .table-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .dropdown-content { display: none; }
+        .dropdown-content.show { display: block; }
+        
+        .priority-high { background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
+        .priority-medium { background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+        .priority-low { background-color: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+        .priority-completed { background-color: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+
+        .status-badge { padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm z-10 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-tasks text-blue-600 text-2xl mr-3"></i>
+                    <h1 class="text-xl font-bold text-gray-900">IR Task & Project Tracker</h1>
+                </div>
+                <div class="flex space-x-8 h-full">
+                    <button onclick="switchTab('tracker')" id="nav-tracker" class="tab-active inline-flex items-center px-1 pt-1 border-b-2 text-sm">
+                        <i class="fas fa-list-ul mr-2"></i> Task Tracker
+                    </button>
+                    <button onclick="switchTab('reports')" id="nav-reports" class="tab-inactive inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm">
+                        <i class="fas fa-file-alt mr-2"></i> Reports
+                    </button>
+                    <button onclick="switchTab('insights')" id="nav-insights" class="tab-inactive inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm">
+                        <i class="fas fa-chart-pie mr-2"></i> Insights
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-hidden flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- GLOBAL LOADER -->
+        <div id="global-loader" class="flex-1 flex justify-center items-center">
+            <div class="flex flex-col items-center">
+                <i class="fas fa-circle-notch fa-spin text-blue-600 text-4xl mb-4"></i>
+                <p class="text-gray-500">Connecting to shared database...</p>
+            </div>
+        </div>
+
+        <!-- TAB 1: TASK TRACKER -->
+        <div id="tab-tracker" class="hidden flex-col h-full">
+            
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex flex-col gap-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-4 text-sm">
+                        <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium"><span id="stat-total">0</span> Total</div>
+                        <div class="bg-green-50 text-green-700 px-3 py-1 rounded-full font-medium"><span id="stat-open">0</span> Open</div>
+                        <div class="bg-gray-50 text-gray-700 px-3 py-1 rounded-full font-medium"><span id="stat-completed">0</span> Completed</div>
+                        <div class="bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium"><span id="stat-overdue">0</span> Overdue</div>
+                    </div>
+                    <button onclick="openAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium transition-colors">
+                        <i class="fas fa-plus mr-2"></i> Add New Task
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Search</label>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                            <input type="text" id="filter-search" oninput="renderTrackerTable()" placeholder="Search tasks, BU, comments..." class="pl-9 w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                        <select id="filter-status" onchange="renderTrackerTable()" class="w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Statuses</option>
+                            <option value="Not Started">Not Started</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="In Training">In Training</option>
+                            <option value="Awaiting Review">Awaiting Review</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="Completed">Completed</option>
+                            <option value="On Hold">On Hold</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Priority</label>
+                        <select id="filter-priority" onchange="renderTrackerTable()" class="w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Priorities</option>
+                            <option value="High Priority">High Priority</option>
+                            <option value="Medium Priority">Medium Priority</option>
+                            <option value="Low Priority">Low Priority</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="clearTrackerFilters()" class="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-1.5 rounded-md shadow-sm text-sm font-medium transition-colors">
+                            Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden table-container">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0 z-10">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BU</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="toggleSort('startDate')">Start Date <i class="fas fa-sort ml-1"></i></th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="toggleSort('deadlineDate')">Deadline <i class="fas fa-sort ml-1"></i></th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Depending On</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">People</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Latest Comment</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="toggleSort('priority')">Priority <i class="fas fa-sort ml-1"></i></th>
+                                <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tracker-tbody" class="bg-white divide-y divide-gray-200 text-sm">
+                            <!-- Tasks will be injected here -->
+                        </tbody>
+                    </table>
+                    <div id="tracker-empty" class="hidden text-center py-10 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
+                        <p>No tasks found matching your criteria.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: REPORTS -->
+        <div id="tab-reports" class="hidden flex-col h-full overflow-y-auto">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Generate Custom Report</h2>
+                
+                <div class="max-w-md mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Business Unit</label>
+                    <div id="report-bu-filter" class="w-full"></div>
+                    <p class="text-xs text-gray-500 mt-2">Select one or more Business Units to generate a comprehensive report of all associated tasks. Leave blank to include all.</p>
+                </div>
+                
+                <div class="flex justify-start space-x-3 border-t pt-4">
+                    <button onclick="resetReportFilters()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md shadow-sm text-sm font-medium">
+                        Reset Filter
+                    </button>
+                    <button onclick="generateReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium">
+                        Preview & Generate Report
+                    </button>
+                </div>
+            </div>
+
+            <div id="report-preview-section" class="hidden bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-[400px]">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-md font-bold text-gray-900">Report Preview (<span id="report-count">0</span> tasks)</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="downloadCSV()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center">
+                            <i class="fas fa-file-csv mr-2"></i> Excel (CSV)
+                        </button>
+                        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center">
+                            <i class="fas fa-file-pdf mr-2"></i> PDF Report
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container overflow-x-auto border border-gray-200 rounded flex-1">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm" id="report-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">BU</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Task</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Start Date</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Deadline</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Depending On</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Submission Date</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">People</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Status</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Priority</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500 min-w-[250px]">Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-tbody" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: INSIGHTS -->
+        <div id="tab-insights" class="hidden flex-col h-full overflow-y-auto space-y-6">
+            
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Total Tasks</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1" id="in-total">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Completion %</p>
+                    <p class="text-2xl font-bold text-blue-600 mt-1" id="in-completion">0%</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Overdue</p>
+                    <p class="text-2xl font-bold text-red-600 mt-1" id="in-overdue">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">High Priority</p>
+                    <p class="text-2xl font-bold text-orange-500 mt-1" id="in-high">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Awaiting Review</p>
+                    <p class="text-2xl font-bold text-purple-600 mt-1" id="in-review">0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Recommendations -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 md:col-span-1">
+                    <h3 class="text-md font-bold text-gray-900 mb-4 border-b pb-2"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i> Where Should We Focus?</h3>
+                    <ul id="insights-recommendations" class="space-y-3 text-sm text-gray-700 list-disc pl-5">
+                        <!-- Filled by JS -->
+                    </ul>
+                </div>
+                
+                <!-- Requires Attention -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 md:col-span-2 flex flex-col max-h-96">
+                    <h3 class="text-md font-bold text-gray-900 mb-4 border-b pb-2"><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> Requires Attention</h3>
+                    <div class="overflow-y-auto flex-1 pr-2 space-y-3" id="insights-attention">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col">
+                    <div class="mb-4 text-center">
+                        <h3 class="text-md font-bold text-gray-900">Tasks by Status</h3>
+                        <p class="text-xs text-gray-500">Current distribution of tasks by status</p>
+                    </div>
+                    <div class="flex-1 relative min-h-[250px]">
+                        <canvas id="chartStatus"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col">
+                    <div class="mb-4 text-center">
+                        <h3 class="text-md font-bold text-gray-900">Tasks by Business Unit</h3>
+                        <p class="text-xs text-gray-500">Task workload across business units</p>
+                    </div>
+                    <div class="flex-1 relative min-h-[250px]">
+                        <canvas id="chartBU"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Add/Edit Task Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 border-b pb-2 mb-4" id="task-modal-title">Add/Edit Task</h3>
+                    <form id="task-form" class="space-y-4">
+                        <input type="hidden" id="task-id">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Business Unit(s) *</label>
+                                <div id="form-bu" class="w-full"></div>
+                                <p class="text-xs text-red-500 hidden mt-1" id="err-bu">Required</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Task(s) *</label>
+                                <div id="form-subtask" class="w-full"></div>
+                                <p class="text-xs text-red-500 hidden mt-1" id="err-subtask">Required</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                                <input type="date" id="form-start-date" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Deadline Date *</label>
+                                <input type="date" id="form-deadline" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Depending On *</label>
+                                <div id="form-depending-on" class="w-full"></div>
+                                <p class="text-xs text-red-500 hidden mt-1" id="err-depending-on">Required</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">People Working on It *</label>
+                                <div id="form-people" class="w-full"></div>
+                                <p class="text-xs text-red-500 hidden mt-1" id="err-people">Required</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                                <select id="form-status" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="Not Started">Not Started</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="In Training">In Training</option>
+                                    <option value="Awaiting Review">Awaiting Review</option>
+                                    <option value="Submitted">Submitted</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="On Hold">On Hold</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
+                                <select id="form-priority" required class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="High Priority">High Priority</option>
+                                    <option value="Medium Priority">Medium Priority</option>
+                                    <option value="Low Priority">Low Priority</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Submission Date</label>
+                                <input type="date" id="form-submission" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div class="sm:col-span-2" id="initial-comment-container">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Add Comment / Update Note</label>
+                                <input type="text" id="form-initial-comment" placeholder="Optional brief update..." class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t">
+                    <button type="button" onclick="saveTask()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Save Task
+                    </button>
+                    <button type="button" onclick="closeModal('task-modal')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Task / Add Comment Modal -->
+    <div id="view-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-3xl sm:w-full">
+                <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl leading-6 font-bold text-gray-900" id="view-title">Task Details</h3>
+                        <button onclick="closeModal('view-modal')" class="text-gray-400 hover:text-gray-500"><i class="fas fa-times text-xl"></i></button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="space-y-3 text-sm">
+                            <p><span class="font-medium text-gray-500">Business Unit:</span> <span id="view-bu" class="text-gray-900"></span></p>
+                            <p><span class="font-medium text-gray-500">Task:</span> <span id="view-subtask" class="text-gray-900"></span></p>
+                            <p><span class="font-medium text-gray-500">Depending On:</span> <span id="view-depending-on" class="text-gray-900"></span></p>
+                            <p><span class="font-medium text-gray-500">Assigned To:</span> <span id="view-people" class="text-gray-900"></span></p>
+                            <p><span class="font-medium text-gray-500">Status:</span> <span id="view-status"></span></p>
+                            <p><span class="font-medium text-gray-500">Priority:</span> <span id="view-priority"></span></p>
+                        </div>
+                        <div class="space-y-3 text-sm bg-gray-50 p-4 rounded-md border">
+                            <p><span class="font-medium text-gray-500">Start Date:</span> <span id="view-start" class="text-gray-900"></span></p>
+                            <p><span class="font-medium text-gray-500">Deadline Date:</span> <span id="view-deadline" class="font-bold text-gray-900"></span></p>
+                            <p><span class="font-medium text-gray-500">Submission Date:</span> <span id="view-submission" class="text-gray-900"></span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <h4 class="text-sm font-bold text-gray-900 mb-3"><i class="fas fa-comments text-gray-400 mr-2"></i>Progress Comments</h4>
+                        <div class="bg-gray-50 border rounded-md p-3 max-h-48 overflow-y-auto mb-4 text-sm" id="view-comments">
+                            <!-- Comments injected here -->
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <input type="text" id="new-comment-input" placeholder="Add a new update..." class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <button onclick="addComment()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-md sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-exclamation-triangle text-red-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Delete Task</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">Are you sure you want to delete this task? This action cannot be undone.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t">
+                    <button type="button" id="confirm-delete-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Delete
+                    </button>
+                    <button type="button" onclick="closeModal('delete-modal')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Toast Modal -->
+    <div id="toast-modal" class="fixed top-5 right-5 bg-white border-l-4 border-blue-600 shadow-lg rounded p-4 hidden z-50 max-w-sm transition-opacity duration-300">
+        <div class="flex items-center">
+            <i class="fas fa-info-circle text-blue-600 text-xl mr-3"></i>
+            <p id="toast-msg" class="text-sm font-medium text-gray-800"></p>
+        </div>
+    </div>
+
+    <script>
+        window.APP_STATE = window.APP_STATE || {
+            tasks: [],
+            currentUser: null,
+            currentViewTaskId: null,
+            deleteTaskId: null,
+            sortCol: 'deadlineDate',
+            sortAsc: true,
+            reportData: []
+        };
+        const OPTIONS = {
+            bu: ['TBFS', 'Lipton', 'RCL', 'HBFS', 'PepsiCo'],
+            subtask: ['Detection Errors', 'Stitching Errors', 'Recaptures', 'Tail SKUs', 'NPDs', 'Pack Change', 'Training Data: Include', 'Training Data: Exclude', 'Master Edits', 'Quality Control', 'Audit Call Cycle Tracking'],
+            dependingOn: ['IMAGE RECOGNITION: QC', 'MASTER DATA', 'SMART', 'CS TEAM', 'REPORTING'],
+            people: ['Phemelo', 'Lesley', 'Ridovhona', 'Nosipho', 'Lorain', 'Kwanele', 'Khumbelo', 'Khetiwe', 'Thato', 'Olebogeng', 'Boitumelo', 'Justin van Zyl', 'Litha Mbete', 'Esmeralda Katts', 'Marie Nel', 'Bilaal Moosa', 'Tommy Hawkins', 'Neebashnee Marimuthu']
+        };
+        window.charts = { status: null, bu: null };
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // IMPORTANT: In Step 2 of the Deployment Guide, you will replace the following `firebaseConfig` object
+        // with the real configuration snippet from your newly created Firebase project.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'irtasktracker-default';
+        const firebaseConfig = {
+  apiKey: "AIzaSyAP39b8nWnu55bPN_1TCl55Hr5RsWCxS6c",
+  authDomain: "ir-task-tracker.firebaseapp.com",
+  projectId: "ir-task-tracker",
+  storageBucket: "ir-task-tracker.firebasestorage.app",
+  messagingSenderId: "995915361733",
+  appId: "1:995915361733:web:24b8fd36cbce1726f06fac"
+};
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        window.saveTask = async () => {
+            if (!window.APP_STATE.currentUser) {
+                showToast("Not authenticated. Please wait.");
+                return;
+            }
+
+            const bu = getMultiselectValues('form-bu');
+            const subtask = getMultiselectValues('form-subtask');
+            const dependingOn = getMultiselectValues('form-depending-on');
+            const people = getMultiselectValues('form-people');
+            const startDate = document.getElementById('form-start-date').value;
+            const deadline = document.getElementById('form-deadline').value;
+            const status = document.getElementById('form-status').value;
+            const priority = document.getElementById('form-priority').value;
+            const submission = document.getElementById('form-submission').value;
+            
+            let valid = true;
+            if(!bu.length) { document.getElementById('err-bu').classList.remove('hidden'); valid = false; } else document.getElementById('err-bu').classList.add('hidden');
+            if(!subtask.length) { document.getElementById('err-subtask').classList.remove('hidden'); valid = false; } else document.getElementById('err-subtask').classList.add('hidden');
+            if(!dependingOn.length) { document.getElementById('err-depending-on').classList.remove('hidden'); valid = false; } else document.getElementById('err-depending-on').classList.add('hidden');
+            if(!people.length) { document.getElementById('err-people').classList.remove('hidden'); valid = false; } else document.getElementById('err-people').classList.add('hidden');
+            
+            if(!startDate || !deadline || !status || !valid) {
+                showToast("Please fill all required fields correctly.");
+                return;
+            }
+
+            if(new Date(deadline) < new Date(startDate)) {
+                showToast("Deadline cannot be earlier than start date.");
+                return;
+            }
+
+            const taskId = document.getElementById('task-id').value || 'task_' + Date.now() + '_' + Math.random().toString(36).substring(2,9);
+            const initialCommentText = document.getElementById('form-initial-comment').value.trim();
+            
+            let existingComments = [];
+            if(document.getElementById('task-id').value) {
+                const existingTask = window.APP_STATE.tasks.find(t => t.id === taskId);
+                if(existingTask && existingTask.comments) existingComments = [...existingTask.comments];
+            }
+
+            if (initialCommentText) {
+                existingComments.push({
+                    date: new Date().toISOString(),
+                    user: 'Manager/User',
+                    text: initialCommentText
+                });
+            }
+
+            const taskData = {
+                bu, subtask, dependingOn, people,
+                startDate, deadlineDate: deadline, submissionDate: submission || '',
+                status, priority, comments: existingComments,
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'irtasks', taskId);
+                await setDoc(docRef, taskData);
+                closeModal('task-modal');
+                showToast("Task saved successfully!");
+            } catch (error) {
+                console.error("Error saving task: ", error);
+                showToast("Error saving task.");
+            }
+        };
+
+        window.confirmDelete = async () => {
+            if (!window.APP_STATE.currentUser || !window.APP_STATE.deleteTaskId) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'irtasks', window.APP_STATE.deleteTaskId);
+                await deleteDoc(docRef);
+                closeModal('delete-modal');
+                showToast("Task deleted.");
+                window.APP_STATE.deleteTaskId = null;
+            } catch (error) {
+                console.error("Error deleting: ", error);
+            }
+        };
+
+        window.addComment = async () => {
+            const input = document.getElementById('new-comment-input');
+            const text = input.value.trim();
+            const taskId = window.APP_STATE.currentViewTaskId;
+            
+            if(!text || !taskId || !window.APP_STATE.currentUser) return;
+
+            const task = window.APP_STATE.tasks.find(t => t.id === taskId);
+            if(!task) return;
+
+            const newComment = {
+                date: new Date().toISOString(),
+                user: 'User Update', 
+                text: text
+            };
+
+            const updatedComments = [...(task.comments || []), newComment];
+            
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'irtasks', taskId);
+                await setDoc(docRef, { ...task, comments: updatedComments }, { merge: true });
+                input.value = '';
+                setTimeout(() => window.viewTask(taskId), 100); 
+            } catch(e) {
+                console.error(e);
+                showToast("Failed to add comment.");
+            }
+        };
+
+        async function initAuthAndData() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    window.APP_STATE.currentUser = user;
+                    const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', 'irtasks');
+                    onSnapshot(tasksRef, (snapshot) => {
+                        window.APP_STATE.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        document.getElementById('global-loader').classList.add('hidden');
+                        document.getElementById('tab-tracker').classList.remove('hidden');
+                        document.getElementById('tab-tracker').classList.add('flex');
+                        
+                        window.renderTrackerTable();
+                        if (document.getElementById('tab-insights').classList.contains('flex')) {
+                            window.renderInsights();
+                        }
+                    }, (err) => {
+                        console.error("Firestore error:", err);
+                        document.getElementById('global-loader').innerHTML = `<p class='text-red-500'>Error loading data.</p>`;
+                    });
+                }
+            });
+        }
+
+        document.getElementById('confirm-delete-btn').addEventListener('click', window.confirmDelete);
+        initAuthAndData();
+    </script>
+
+    <script>
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            toast.innerText = msg;
+            const container = document.getElementById('toast-modal');
+            container.classList.remove('hidden');
+            setTimeout(() => { container.classList.add('hidden'); }, 3000);
+        }
+
+        function switchTab(tabId) {
+            ['tracker', 'reports', 'insights'].forEach(t => {
+                const el = document.getElementById('tab-' + t);
+                const nav = document.getElementById('nav-' + t);
+                if(t === tabId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                    nav.className = "tab-active inline-flex items-center px-1 pt-1 border-b-2 text-sm";
+                } else {
+                    el.classList.remove('flex');
+                    el.classList.add('hidden');
+                    nav.className = "tab-inactive inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm hover:border-gray-300";
+                }
+            });
+            if(tabId === 'insights') renderInsights();
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function formatDateSA(isoString) {
+            if(!isoString) return '-';
+            const [y, m, d] = isoString.split('-');
+            return `${d}/${m}/${y}`;
+        }
+        
+        function formatDateTime(isoString) {
+            if(!isoString) return '';
+            const dt = new Date(isoString);
+            const d = String(dt.getDate()).padStart(2, '0');
+            const m = String(dt.getMonth()+1).padStart(2, '0');
+            const y = dt.getFullYear();
+            return `${d}/${m}/${y}`;
+        }
+
+        function isOverdue(deadlineStr) {
+            if(!deadlineStr) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const deadline = new Date(deadlineStr);
+            deadline.setHours(0, 0, 0, 0);
+            return deadline < today;
+        }
+
+        function getPriorityObj(priority, status) {
+            if (status === 'Completed') return { label: 'Completed', level: 4, class: 'priority-completed' };
+            if (priority === 'High Priority') return { label: 'High Priority', level: 1, class: 'priority-high' };
+            if (priority === 'Medium Priority') return { label: 'Medium Priority', level: 2, class: 'priority-medium' };
+            return { label: 'Low Priority', level: 3, class: 'priority-low' };
+        }
+
+        function createMultiselect(containerId, options, placeholder) {
+            const container = document.getElementById(containerId);
+            const html = `
+                <div class="relative custom-multiselect w-full text-sm">
+                    <div class="border border-gray-300 rounded-md shadow-sm py-2 px-3 cursor-pointer bg-white flex justify-between items-center" onclick="toggleMsDropdown(this)">
+                        <span class="ms-label truncate block">${placeholder}</span>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                    </div>
+                    <div class="absolute bg-white border border-gray-200 mt-1 w-full max-h-48 overflow-y-auto hidden z-20 rounded shadow-lg ms-dropdown">
+                        ${options.map(opt => `
+                            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-700">
+                                <input type="checkbox" value="${opt}" class="mr-2 text-blue-600 focus:ring-blue-500 h-4 w-4 rounded" onchange="updateMsLabel(this, '${placeholder}')"> 
+                                <span>${opt}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function toggleMsDropdown(el) {
+            const dropdown = el.nextElementSibling;
+            document.querySelectorAll('.ms-dropdown').forEach(d => { if(d !== dropdown) d.classList.add('hidden'); });
+            dropdown.classList.toggle('hidden');
+        }
+
+        function updateMsLabel(checkbox, placeholder) {
+            const container = checkbox.closest('.custom-multiselect');
+            const checked = Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+            const labelEl = container.querySelector('.ms-label');
+            if(checked.length === 0) labelEl.textContent = placeholder;
+            else if(checked.length <= 2) labelEl.textContent = checked.join(', ');
+            else labelEl.textContent = `${checked.length} selected`;
+        }
+
+        function getMultiselectValues(containerId) {
+            const container = document.getElementById(containerId);
+            if(!container) return [];
+            return Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+        }
+
+        function setMultiselectValues(containerId, values, placeholder) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => { cb.checked = values.includes(cb.value); });
+            if(checkboxes.length) updateMsLabel(checkboxes[0], placeholder);
+        }
+
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.custom-multiselect')) {
+                document.querySelectorAll('.ms-dropdown').forEach(d => d.classList.add('hidden'));
+            }
+        });
+
+        createMultiselect('form-bu', OPTIONS.bu, 'Select BU(s)');
+        createMultiselect('form-subtask', OPTIONS.subtask, 'Select Task(s)');
+        createMultiselect('form-depending-on', OPTIONS.dependingOn, 'Select Dept(s)');
+        createMultiselect('form-people', OPTIONS.people, 'Select People');
+        createMultiselect('report-bu-filter', OPTIONS.bu, 'Any BU');
+
+        function toggleSort(col) {
+            if(window.APP_STATE.sortCol === col) {
+                window.APP_STATE.sortAsc = !window.APP_STATE.sortAsc;
+            } else {
+                window.APP_STATE.sortCol = col;
+                window.APP_STATE.sortAsc = true;
+            }
+            renderTrackerTable();
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'Completed': return 'bg-green-100 text-green-800 border-green-200 border';
+                case 'Not Started': return 'bg-gray-100 text-gray-800 border-gray-200 border';
+                case 'In Progress': return 'bg-blue-100 text-blue-800 border-blue-200 border';
+                case 'In Training': return 'bg-teal-100 text-teal-800 border-teal-200 border';
+                case 'Awaiting Review': return 'bg-purple-100 text-purple-800 border-purple-200 border';
+                case 'Submitted': return 'bg-indigo-100 text-indigo-800 border-indigo-200 border';
+                case 'On Hold': return 'bg-yellow-100 text-yellow-800 border-yellow-200 border';
+                default: return 'bg-gray-100 text-gray-800 border';
+            }
+        }
+
+        function renderTrackerTable() {
+            const tbody = document.getElementById('tracker-tbody');
+            const search = document.getElementById('filter-search').value.toLowerCase();
+            const statusF = document.getElementById('filter-status').value;
+            const priorityF = document.getElementById('filter-priority').value;
+            
+            let tasks = window.APP_STATE.tasks.map(t => {
+                const prio = getPriorityObj(t.priority, t.status);
+                const isTaskOverdue = t.status !== 'Completed' && isOverdue(t.deadlineDate);
+                return { ...t, prioLabel: prio.label, prioLevel: prio.level, prioClass: prio.class, isOverdue: isTaskOverdue };
+            });
+
+            tasks = tasks.filter(t => {
+                let match = true;
+                if(statusF && t.status !== statusF) match = false;
+                
+                if(priorityF) {
+                    if (priorityF === 'Overdue' && !t.isOverdue) match = false;
+                    else if (priorityF === 'Due Today' && t.deadlineDate !== new Date().toISOString().split('T')[0]) match = false;
+                    else if (['High Priority', 'Medium Priority', 'Low Priority'].includes(priorityF) && t.priority !== priorityF) match = false;
+                }
+                
+                if(search) {
+                    const searchStr = `${t.bu.join(' ')} ${t.subtask.join(' ')} ${t.people.join(' ')} ${t.status} ${(t.comments||[]).map(c=>c.text).join(' ')}`.toLowerCase();
+                    if(!searchStr.includes(search)) match = false;
+                }
+                return match;
+            });
+
+            document.getElementById('stat-total').innerText = tasks.length;
+            document.getElementById('stat-open').innerText = tasks.filter(t=>t.status !== 'Completed').length;
+            document.getElementById('stat-completed').innerText = tasks.filter(t=>t.status === 'Completed').length;
+            document.getElementById('stat-overdue').innerText = tasks.filter(t=>t.isOverdue).length;
+
+            tasks.sort((a, b) => {
+                let valA, valB;
+                const col = window.APP_STATE.sortCol;
+                if(col === 'priority') { valA = a.prioLevel; valB = b.prioLevel; }
+                else if(col === 'startDate') { valA = new Date(a.startDate).getTime(); valB = new Date(b.startDate).getTime(); }
+                else if(col === 'deadlineDate') { valA = new Date(a.deadlineDate).getTime(); valB = new Date(b.deadlineDate).getTime(); }
+                else { valA = 0; valB = 0; }
+
+                if(valA < valB) return window.APP_STATE.sortAsc ? -1 : 1;
+                if(valA > valB) return window.APP_STATE.sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            if(tasks.length === 0) {
+                tbody.innerHTML = '';
+                document.getElementById('tracker-empty').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('tracker-empty').classList.add('hidden');
+
+            tbody.innerHTML = tasks.map(t => {
+                const latestComment = (t.comments && t.comments.length > 0) ? t.comments[t.comments.length-1].text : '-';
+                return `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3 whitespace-nowrap">${t.bu.join(', ')}</td>
+                        <td class="px-4 py-3 text-xs">
+                            ${t.subtask.slice(0,2).join(', ')}${t.subtask.length > 2 ? ` <span class="text-gray-400">+${t.subtask.length-2}</span>` : ''}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">${formatDateSA(t.startDate)}</td>
+                        <td class="px-4 py-3 whitespace-nowrap font-medium ${t.isOverdue ? 'text-red-600' : ''}">${formatDateSA(t.deadlineDate)}</td>
+                        <td class="px-4 py-3 text-xs">${t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : '-'}</td>
+                        <td class="px-4 py-3 text-xs">${t.people.join(', ')}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">${formatDateSA(t.submissionDate)}</td>
+                        <td class="px-4 py-3 text-xs truncate max-w-xs text-gray-500" title="${latestComment}">${latestComment}</td>
+                        <td class="px-4 py-3 whitespace-nowrap"><span class="status-badge ${getStatusColor(t.status)}">${t.status}</span></td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 py-1 rounded text-xs font-semibold ${t.prioClass}">${t.prioLabel}</span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
+                            <button onclick="viewTask('${t.id}')" class="text-blue-600 hover:text-blue-900 mr-3" title="View/Comment"><i class="fas fa-eye"></i></button>
+                            <button onclick="editTask('${t.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button onclick="promptDelete('${t.id}')" class="text-red-600 hover:text-red-900" title="Delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function clearTrackerFilters() {
+            document.getElementById('filter-search').value = '';
+            document.getElementById('filter-status').value = '';
+            document.getElementById('filter-priority').value = '';
+            renderTrackerTable();
+        }
+
+        window.openAddTaskModal = function() {
+            document.getElementById('task-id').value = '';
+            document.getElementById('task-modal-title').innerText = 'Add New Task';
+            setMultiselectValues('form-bu', [], 'Select BU(s)');
+            setMultiselectValues('form-subtask', [], 'Select Task(s)');
+            setMultiselectValues('form-depending-on', [], 'Select Dept(s)');
+            setMultiselectValues('form-people', [], 'Select People');
+            document.getElementById('form-start-date').value = '';
+            document.getElementById('form-deadline').value = '';
+            document.getElementById('form-submission').value = '';
+            document.getElementById('form-status').value = 'Not Started';
+            document.getElementById('form-priority').value = 'Medium Priority';
+            document.getElementById('form-initial-comment').value = '';
+            
+            openModal('task-modal');
+        }
+
+        window.editTask = function(id) {
+            const t = window.APP_STATE.tasks.find(x => x.id === id);
+            if(!t) return;
+            
+            document.getElementById('task-id').value = t.id;
+            document.getElementById('task-modal-title').innerText = 'Edit Task Details';
+            
+            setMultiselectValues('form-bu', t.bu, 'Select BU(s)');
+            setMultiselectValues('form-subtask', t.subtask, 'Select Task(s)');
+            setMultiselectValues('form-depending-on', t.dependingOn || [], 'Select Dept(s)');
+            setMultiselectValues('form-people', t.people, 'Select People');
+            
+            document.getElementById('form-start-date').value = t.startDate;
+            document.getElementById('form-deadline').value = t.deadlineDate;
+            document.getElementById('form-submission').value = t.submissionDate || '';
+            document.getElementById('form-status').value = t.status;
+            document.getElementById('form-priority').value = t.priority || 'Medium Priority';
+            document.getElementById('form-initial-comment').value = ''; 
+
+            openModal('task-modal');
+        }
+
+        window.promptDelete = function(id) {
+            window.APP_STATE.deleteTaskId = id;
+            openModal('delete-modal');
+        }
+
+        window.viewTask = function(id) {
+            const t = window.APP_STATE.tasks.find(x => x.id === id);
+            if(!t) return;
+            window.APP_STATE.currentViewTaskId = id;
+
+            document.getElementById('view-bu').innerText = t.bu.join(', ');
+            document.getElementById('view-subtask').innerText = t.subtask.join(', ');
+            document.getElementById('view-depending-on').innerText = t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : '-';
+            document.getElementById('view-people').innerText = t.people.join(', ');
+            document.getElementById('view-start').innerText = formatDateSA(t.startDate);
+            document.getElementById('view-deadline').innerText = formatDateSA(t.deadlineDate);
+            document.getElementById('view-submission').innerText = formatDateSA(t.submissionDate);
+            
+            document.getElementById('view-status').innerHTML = `<span class="status-badge ${getStatusColor(t.status)}">${t.status}</span>`;
+            
+            const prio = getPriorityObj(t.priority, t.status);
+            document.getElementById('view-priority').innerHTML = `<span class="px-2 py-1 rounded text-xs font-semibold ${prio.class}">${prio.label}</span>`;
+
+            const commsDiv = document.getElementById('view-comments');
+            if(t.comments && t.comments.length > 0) {
+                commsDiv.innerHTML = t.comments.map(c => `
+                    <div class="mb-2 pb-2 border-b border-gray-200 last:border-0">
+                        <span class="text-xs font-bold text-gray-500">${formatDateTime(c.date)} &mdash; ${c.user}:</span> 
+                        <span class="text-gray-800">${c.text}</span>
+                    </div>
+                `).join('');
+            } else {
+                commsDiv.innerHTML = '<p class="text-gray-400 italic">No comments yet.</p>';
+            }
+
+            openModal('view-modal');
+        }
+
+        window.resetReportFilters = function() {
+            setMultiselectValues('report-bu-filter', [], 'Any BU');
+            document.getElementById('report-preview-section').classList.add('hidden');
+        }
+
+        window.generateReport = function() {
+            const bu = getMultiselectValues('report-bu-filter');
+
+            let filtered = window.APP_STATE.tasks.map(t => ({...t, prioObj: getPriorityObj(t.priority, t.status)}));
+            if(bu.length) filtered = filtered.filter(t => t.bu.some(b => bu.includes(b)));
+
+            window.APP_STATE.reportData = filtered;
+            document.getElementById('report-count').innerText = filtered.length;
+            
+            const tbody = document.getElementById('report-tbody');
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="px-3 py-4 text-center text-gray-500">No matching tasks found.</td></tr>';
+            } else {
+                tbody.innerHTML = filtered.map(t => {
+                    const commentsHtml = t.comments && t.comments.length > 0 
+                        ? t.comments.map(c => `<div style="margin-bottom: 4px;">• ${formatDateTime(c.date)}: ${c.text}</div>`).join('')
+                        : '-';
+                    return `
+                    <tr>
+                        <td class="px-3 py-2 whitespace-nowrap">${t.bu.join(', ')}</td>
+                        <td class="px-3 py-2 text-xs truncate max-w-xs">${t.subtask.join(', ')}</td>
+                        <td class="px-3 py-2 whitespace-nowrap">${formatDateSA(t.startDate)}</td>
+                        <td class="px-3 py-2 whitespace-nowrap">${formatDateSA(t.deadlineDate)}</td>
+                        <td class="px-3 py-2 text-xs">${t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : '-'}</td>
+                        <td class="px-3 py-2 whitespace-nowrap">${formatDateSA(t.submissionDate)}</td>
+                        <td class="px-3 py-2 text-xs">${t.people.join(', ')}</td>
+                        <td class="px-3 py-2 whitespace-nowrap">${t.status}</td>
+                        <td class="px-3 py-2 whitespace-nowrap">${t.prioObj.label}</td>
+                        <td class="px-3 py-2 min-w-[250px] text-gray-600 text-xs">${commentsHtml}</td>
+                    </tr>
+                `}).join('');
+            }
+            
+            document.getElementById('report-preview-section').classList.remove('hidden');
+        }
+
+        window.downloadCSV = function() {
+            if(!window.APP_STATE.reportData.length) return showToast("No data to download.");
+            let csv = "BU,Task,Start Date,Deadline Date,Depending On,Submission Date,People,Status,Priority,Comments\n";
+            window.APP_STATE.reportData.forEach(t => {
+                const formattedComments = (t.comments && t.comments.length > 0)
+                    ? `"${t.comments.map(c => `- ${formatDateTime(c.date)}: ${c.text}`).join('\n').replace(/"/g, '""')}"`
+                    : `""`;
+                
+                csv += `"${t.bu.join(', ')}","${t.subtask.join(', ')}","${formatDateSA(t.startDate)}","${formatDateSA(t.deadlineDate)}","${t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : ''}","${formatDateSA(t.submissionDate)}","${t.people.join(', ')}","${t.status}","${t.prioObj.label}",${formattedComments}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `IR_Tracker_Report_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.downloadPDF = function() {
+            if(!window.APP_STATE.reportData.length) return showToast("No data to download.");
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape');
+            
+            doc.setFontSize(16);
+            doc.text("IR Task & Project Tracker Report", 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
+
+            const tableData = window.APP_STATE.reportData.map(t => [
+                t.bu.join(', '),
+                t.subtask.join(', '),
+                formatDateSA(t.startDate),
+                formatDateSA(t.deadlineDate),
+                t.dependingOn && t.dependingOn.length > 0 ? t.dependingOn.join(', ') : '-',
+                formatDateSA(t.submissionDate),
+                t.people.join(', '),
+                t.status,
+                t.prioObj.label,
+                (t.comments||[]).map(c=> `- ${formatDateTime(c.date)}: ${c.text}`).join('\n')
+            ]);
+
+            doc.autoTable({
+                startY: 28,
+                head: [['BU', 'Task', 'Start Date', 'Deadline', 'Depending On', 'Submission', 'People', 'Status', 'Priority', 'Comments']],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [37, 99, 235] },
+                columnStyles: { 9: { cellWidth: 70 } }
+            });
+
+            doc.save(`IR_Report_${new Date().getTime()}.pdf`);
+        }
+
+        window.renderInsights = function() {
+            const tasks = window.APP_STATE.tasks;
+            const enhancedTasks = tasks.map(t => ({...t, prioObj: getPriorityObj(t.priority, t.status)}));
+            
+            const total = tasks.length;
+            const comp = enhancedTasks.filter(t => t.status === 'Completed').length;
+            const overdue = enhancedTasks.filter(t => t.status !== 'Completed' && isOverdue(t.deadlineDate)).length;
+            const high = enhancedTasks.filter(t => t.priority === 'High Priority' && t.status !== 'Completed').length;
+            const review = enhancedTasks.filter(t => t.status === 'Awaiting Review').length;
+
+            document.getElementById('in-total').innerText = total;
+            document.getElementById('in-completion').innerText = total ? Math.round((comp/total)*100) + '%' : '0%';
+            document.getElementById('in-overdue').innerText = overdue;
+            document.getElementById('in-high').innerText = high;
+            document.getElementById('in-review').innerText = review;
+
+            const recList = document.getElementById('insights-recommendations');
+            let recs = [];
+            if(overdue > 0) recs.push(`<b>${overdue} tasks are overdue.</b> Follow up with the assigned team members immediately.`);
+            if(review > 0) recs.push(`<b>${review} tasks are awaiting review.</b> Clear these to maintain momentum.`);
+            
+            const approachingNoSub = enhancedTasks.filter(t => t.priority === 'High Priority' && !t.submissionDate && t.status !== 'Completed');
+            if(approachingNoSub.length > 0) recs.push(`<b>${approachingNoSub.length} high priority tasks</b> have not been submitted yet.`);
+            
+            let buCounts = {};
+            tasks.forEach(t => t.bu.forEach(b => buCounts[b] = (buCounts[b]||0)+1));
+            const maxBu = Object.keys(buCounts).sort((a,b)=>buCounts[b]-buCounts[a])[0];
+            if(maxBu && buCounts[maxBu] > 0) recs.push(`<b>${maxBu}</b> has the highest number of overall tasks (${buCounts[maxBu]}).`);
+
+            const subNoDate = enhancedTasks.filter(t => t.status === 'Submitted' && !t.submissionDate).length;
+            if(subNoDate > 0) recs.push(`<b>${subNoDate} tasks</b> are marked as 'Submitted' but have no Submission Date recorded.`);
+
+            if(recs.length === 0) recs.push("All clear! No critical action points right now.");
+            recList.innerHTML = recs.map(r => `<li>${r}</li>`).join('');
+
+            const attList = document.getElementById('insights-attention');
+            const attItems = enhancedTasks.filter(t => 
+                (t.status !== 'Completed' && isOverdue(t.deadlineDate)) ||
+                (t.priority === 'High Priority' && t.status !== 'Completed') ||
+                t.status === 'Awaiting Review' ||
+                (t.status === 'On Hold')
+            ).sort((a,b) => {
+                const aOver = (a.status !== 'Completed' && isOverdue(a.deadlineDate)) ? 0 : 1;
+                const bOver = (b.status !== 'Completed' && isOverdue(b.deadlineDate)) ? 0 : 1;
+                if(aOver !== bOver) return aOver - bOver;
+                return a.prioObj.level - b.prioObj.level;
+            }); 
+
+            if(attItems.length === 0) {
+                attList.innerHTML = '<p class="text-gray-500 italic text-sm">Nothing requires immediate attention.</p>';
+            } else {
+                attList.innerHTML = attItems.slice(0, 20).map(t => { 
+                    let reason = t.prioObj.label;
+                    if(t.status !== 'Completed' && isOverdue(t.deadlineDate)) reason = 'Overdue';
+                    else if(t.status === 'Awaiting Review') reason = 'Needs Review';
+                    else if(t.status === 'On Hold') reason = 'On Hold';
+                    
+                    let badgeClass = t.prioObj.class;
+                    if (reason === 'Overdue') badgeClass = 'bg-red-100 text-red-800 border-red-200 border';
+
+                    return `
+                    <div class="flex justify-between items-center p-3 bg-red-50 rounded border border-red-100 mb-3">
+                        <div class="flex-1">
+                            <div class="flex space-x-2 items-center mb-1">
+                                <span class="font-bold text-sm text-gray-900">${t.bu.join(', ')}</span>
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded ${badgeClass}">${reason}</span>
+                            </div>
+                            <p class="text-xs text-gray-700">${t.subtask.join(', ')} &mdash; Assigned: ${t.people.join(', ')}</p>
+                            <p class="text-xs text-gray-500 mt-1">Deadline: ${formatDateSA(t.deadlineDate)}</p>
+                        </div>
+                        <button onclick="viewTask('${t.id}')" class="ml-4 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded shadow-sm text-xs font-medium">View</button>
+                    </div>
+                `}).join('');
+            }
+
+            renderCharts(enhancedTasks);
+        }
+
+        function renderCharts(tasks) {
+            const valueLabelsPlugin = {
+                id: 'valueLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx, data } = chart;
+                    ctx.save();
+                    chart.getDatasetMeta(0).data.forEach((datapoint, index) => {
+                        const value = data.datasets[0].data[index];
+                        ctx.fillStyle = '#475569';
+                        ctx.font = 'bold 12px Inter, sans-serif';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(value, datapoint.x + 6, datapoint.y);
+                    });
+                    ctx.restore();
+                }
+            };
+
+            const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+            const statusLabels = ['Not Started', 'In Progress', 'In Training', 'Awaiting Review', 'Submitted', 'Completed', 'On Hold'];
+            const statusColors = {
+                'Not Started': '#94a3b8', 
+                'In Progress': '#3b82f6',
+                'In Training': '#14b8a6', 
+                'Awaiting Review': '#f59e0b', 
+                'Submitted': '#8b5cf6', 
+                'Completed': '#22c55e', 
+                'On Hold': '#475569'      
+            };
+            const statusCounts = {'Not Started':0, 'In Progress':0, 'In Training':0, 'Awaiting Review':0, 'Submitted':0, 'Completed':0, 'On Hold':0};
+            
+            tasks.forEach(t => { 
+                if(statusCounts[t.status] !== undefined) statusCounts[t.status]++; 
+            });
+            
+            if(window.charts.status) window.charts.status.destroy();
+            window.charts.status = new Chart(ctxStatus, {
+                type: 'bar',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusLabels.map(l => statusCounts[l]),
+                        backgroundColor: statusLabels.map(l => statusColors[l]),
+                        borderRadius: 4,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: { 
+                    indexAxis: 'y', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    layout: { padding: { right: 30 } }, 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    },
+                    scales: { 
+                        x: { display: false, beginAtZero: true, suggestedMax: Math.max(...Object.values(statusCounts), 5) },
+                        y: { 
+                            grid: { display: false }, 
+                            border: { display: false },
+                            ticks: { font: { family: 'Inter, sans-serif', size: 11 }, color: '#334155' }
+                        }
+                    }
+                },
+                plugins: [valueLabelsPlugin]
+            });
+
+            const ctxBU = document.getElementById('chartBU').getContext('2d');
+            const buLabels = ['TBFS', 'Lipton', 'RCL', 'HBFS', 'PepsiCo'];
+            const buCounts = {'TBFS':0, 'Lipton':0, 'RCL':0, 'HBFS':0, 'PepsiCo':0};
+            
+            tasks.forEach(t => { 
+                t.bu.forEach(b => { 
+                    if(buCounts[b] !== undefined) buCounts[b]++; 
+                }); 
+            });
+            
+            if(window.charts.bu) window.charts.bu.destroy();
+            window.charts.bu = new Chart(ctxBU, {
+                type: 'bar',
+                data: {
+                    labels: buLabels,
+                    datasets: [{
+                        data: buLabels.map(l => buCounts[l]),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: { 
+                    indexAxis: 'y', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    layout: { padding: { right: 30 } }, 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    },
+                    scales: { 
+                        x: { display: false, beginAtZero: true, suggestedMax: Math.max(...Object.values(buCounts), 5) },
+                        y: { 
+                            grid: { display: false }, 
+                            border: { display: false },
+                            ticks: { font: { family: 'Inter, sans-serif', size: 11 }, color: '#334155' }
+                        }
+                    }
+                },
+                plugins: [valueLabelsPlugin]
+            });
+        }
+    </script>
+</body>
+</html>
