@@ -36,220 +36,263 @@
 </head>
 <body class="h-screen flex flex-col">
 
-    <header class="bg-white shadow-sm z-10 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <i class="fas fa-tasks text-blue-600 text-2xl mr-3"></i>
-                    <h1 class="text-xl font-bold text-gray-900">IR Task & Project Tracker</h1>
-                </div>
-                <div class="flex space-x-8 h-full">
-                    <button onclick="switchTab('tracker')" id="nav-tracker" class="tab-active inline-flex items-center px-1 pt-1 border-b-2 text-sm">
-                        <i class="fas fa-list-ul mr-2"></i> Task Tracker
-                    </button>
-                    <button onclick="switchTab('reports')" id="nav-reports" class="tab-inactive inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm">
-                        <i class="fas fa-file-alt mr-2"></i> Reports
-                    </button>
-                    <button onclick="switchTab('insights')" id="nav-insights" class="tab-inactive inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm">
-                        <i class="fas fa-chart-pie mr-2"></i> Insights
-                    </button>
-                </div>
+    <!-- Login / Sign In Screen -->
+    <div id="login-screen" class="flex flex-col flex-1 items-center justify-center px-4 bg-gray-50 z-50">
+        <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full border border-gray-100 text-center">
+            <i class="fas fa-tasks text-blue-600 text-5xl mb-4"></i>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">IR Task & Project Tracker</h1>
+            <p class="text-gray-500 text-sm mb-8">Please select your profile to continue</p>
+            
+            <div class="mb-6 text-left">
+                <label class="block text-sm font-medium text-gray-700 mb-2">User Profile</label>
+                <select id="login-profile" class="w-full border border-gray-300 rounded-md py-2.5 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">-- Choose your name --</option>
+                    <option value="Baile">Baile</option>
+                    <option value="Boitumelo">Boitumelo</option>
+                    <option value="Khetiwe">Khetiwe</option>
+                    <option value="Khumbelo">Khumbelo</option>
+                    <option value="Kwanele">Kwanele</option>
+                    <option value="Lesley">Lesley</option>
+                    <option value="Lorain">Lorain</option>
+                    <option value="Nosipho">Nosipho</option>
+                    <option value="Olebogeng">Olebogeng</option>
+                    <option value="Phemelo">Phemelo</option>
+                    <option value="Ridovhona">Ridovhona</option>
+                    <option value="Thato">Thato</option>
+                </select>
+                <p id="login-error" class="text-red-500 text-xs mt-2 hidden">Please select a profile to continue.</p>
             </div>
+            
+            <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-md shadow transition-colors">
+                Enter Tracker
+            </button>
         </div>
-    </header>
+    </div>
 
-    <main class="flex-1 overflow-hidden flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
-        
-        <!-- Global Loader -->
-        <div id="global-loader" class="flex-1 flex justify-center items-center">
-            <div class="flex flex-col items-center">
-                <i class="fas fa-circle-notch fa-spin text-blue-600 text-4xl mb-4" id="loader-icon"></i>
-                <p class="text-gray-500" id="loader-text">Connecting to shared database...</p>
-                <div id="loader-error" class="text-red-500 mt-4 text-center max-w-md text-sm hidden"></div>
-            </div>
-        </div>
-
-        <!-- Tab: Tracker -->
-        <div id="tab-tracker" class="hidden flex-col h-full">
-            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex flex-col gap-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div class="flex flex-wrap gap-2 text-sm">
-                        <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium"><span id="stat-total">0</span> Total</div>
-                        <div class="bg-green-50 text-green-700 px-3 py-1 rounded-full font-medium"><span id="stat-open">0</span> Open</div>
-                        <div class="bg-gray-50 text-gray-700 px-3 py-1 rounded-full font-medium"><span id="stat-completed">0</span> Completed</div>
-                        <div class="bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium"><span id="stat-overdue">0</span> Overdue</div>
+    <!-- Main App Wrapper -->
+    <div id="main-app" class="hidden flex-col h-full overflow-hidden w-full">
+        <header class="bg-white shadow-sm z-10 relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <i class="fas fa-tasks text-blue-600 text-2xl mr-3"></i>
+                        <h1 class="text-xl font-bold text-gray-900 hidden sm:block">IR Tracker</h1>
                     </div>
-                    <button onclick="openAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium transition-colors whitespace-nowrap">
-                        <i class="fas fa-plus mr-2"></i> Add New Task
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Search</label>
-                        <div class="relative">
-                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
-                            <input type="text" id="filter-search" oninput="renderTrackerTable()" placeholder="Search tasks, BU, comments, people..." class="pl-9 w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <div class="flex space-x-4 sm:space-x-8 h-full">
+                        <button onclick="switchTab('tracker')" id="nav-tracker" class="tab-active inline-flex items-center px-1 pt-1 border-b-2 text-sm">
+                            <i class="fas fa-list-ul mr-2"></i> Tasks
+                        </button>
+                        <button onclick="switchTab('reports')" id="nav-reports" class="tab-inactive inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm">
+                            <i class="fas fa-file-alt mr-2"></i> Reports
+                        </button>
+                        <button onclick="switchTab('insights')" id="nav-insights" class="tab-inactive inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm">
+                            <i class="fas fa-chart-pie mr-2"></i> Insights
+                        </button>
+                    </div>
+                    <div class="flex items-center pl-4 border-l ml-2">
+                        <div class="hidden sm:flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mr-3">
+                            <i class="fas fa-user mr-2"></i> <span id="header-user-name"></span>
                         </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Status</label>
-                        <select id="filter-status" onchange="renderTrackerTable()" class="w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Statuses</option>
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="In Training">In Training</option>
-                            <option value="Awaiting Review">Awaiting Review</option>
-                            <option value="Submitted">Submitted</option>
-                            <option value="Completed">Completed</option>
-                            <option value="On Hold">On Hold</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Priority</label>
-                        <select id="filter-priority" onchange="renderTrackerTable()" class="w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Priorities</option>
-                            <option value="High Priority">High Priority</option>
-                            <option value="Medium Priority">Medium Priority</option>
-                            <option value="Low Priority">Low Priority</option>
-                        </select>
-                    </div>
-                    <div>
-                        <button onclick="clearTrackerFilters()" class="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-1.5 rounded-md shadow-sm text-sm font-medium transition-colors">
-                            Clear Filters
+                        <button onclick="handleLogout()" class="text-gray-400 hover:text-red-600 transition-colors" title="Switch User">
+                            <i class="fas fa-sign-out-alt text-lg"></i>
                         </button>
                     </div>
                 </div>
             </div>
+        </header>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden table-container">
-                <div class="overflow-x-auto flex-1">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50 sticky top-0 z-10">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BU</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('startDate')">Start Date <i class="fas fa-sort ml-1"></i></th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('deadlineDate')">Deadline <i class="fas fa-sort ml-1"></i></th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Depending On</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">People</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Latest Comment</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('priority')">Priority <i class="fas fa-sort ml-1"></i></th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tracker-tbody" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
-                    </table>
-                    <div id="tracker-empty" class="hidden text-center py-10 text-gray-500">
-                        <p>No tasks found.</p>
+        <main class="flex-1 overflow-hidden flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+            
+            <div id="global-loader" class="flex-1 flex justify-center items-center">
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-circle-notch fa-spin text-blue-600 text-4xl mb-4" id="loader-icon"></i>
+                    <p class="text-gray-500" id="loader-text">Connecting to shared database...</p>
+                    <div id="loader-error" class="text-red-500 mt-4 text-center max-w-md text-sm hidden"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Tracker -->
+            <div id="tab-tracker" class="hidden flex-col h-full">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div class="flex flex-wrap gap-2 text-sm">
+                            <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium"><span id="stat-total">0</span> Total</div>
+                            <div class="bg-green-50 text-green-700 px-3 py-1 rounded-full font-medium"><span id="stat-open">0</span> Open</div>
+                            <div class="bg-gray-50 text-gray-700 px-3 py-1 rounded-full font-medium"><span id="stat-completed">0</span> Completed</div>
+                            <div class="bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium"><span id="stat-overdue">0</span> Overdue</div>
+                        </div>
+                        <button onclick="openAddTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow text-sm font-medium transition-colors whitespace-nowrap">
+                            <i class="fas fa-plus mr-2"></i> Add New Task
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Search</label>
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                                <input type="text" id="filter-search" oninput="renderTrackerTable()" placeholder="Search tasks, BU, comments, people..." class="pl-9 w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                            <select id="filter-status" onchange="renderTrackerTable()" class="w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">All Statuses</option>
+                                <option value="Not Started">Not Started</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="In Training">In Training</option>
+                                <option value="Awaiting Review">Awaiting Review</option>
+                                <option value="Submitted">Submitted</option>
+                                <option value="Completed">Completed</option>
+                                <option value="On Hold">On Hold</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Priority</label>
+                            <select id="filter-priority" onchange="renderTrackerTable()" class="w-full border border-gray-300 rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">All Priorities</option>
+                                <option value="High Priority">High Priority</option>
+                                <option value="Medium Priority">Medium Priority</option>
+                                <option value="Low Priority">Low Priority</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button onclick="clearTrackerFilters()" class="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-1.5 rounded-md shadow-sm text-sm font-medium transition-colors">
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden table-container">
+                    <div class="overflow-x-auto flex-1">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BU</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('startDate')">Start Date <i class="fas fa-sort ml-1"></i></th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('deadlineDate')">Deadline <i class="fas fa-sort ml-1"></i></th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Depending On</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">People</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Latest Comment</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="toggleSort('priority')">Priority <i class="fas fa-sort ml-1"></i></th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tracker-tbody" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
+                        </table>
+                        <div id="tracker-empty" class="hidden text-center py-10 text-gray-500">
+                            <p>No tasks found.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Tab: Reports -->
-        <div id="tab-reports" class="hidden flex-col h-full overflow-y-auto">
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Generate Custom Report</h2>
-                <div class="max-w-md mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Business Unit</label>
-                    <div id="report-bu-filter" class="w-full"></div>
-                </div>
-                <div class="flex justify-start space-x-3 border-t pt-4">
-                    <button onclick="resetReportFilters()" class="bg-white border border-gray-300 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50">Reset</button>
-                    <button onclick="generateReport()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">Generate Report</button>
-                </div>
-            </div>
-
-            <div id="report-preview-section" class="hidden bg-white p-6 rounded-lg shadow-sm border flex-1 flex flex-col min-h-[400px]">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-md font-bold text-gray-900">Report Preview (<span id="report-count">0</span> tasks)</h3>
-                    <div class="flex space-x-2">
-                        <button onclick="downloadCSV()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium"><i class="fas fa-file-csv mr-2"></i> CSV</button>
-                        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium"><i class="fas fa-file-pdf mr-2"></i> PDF</button>
+            <!-- Tab: Reports -->
+            <div id="tab-reports" class="hidden flex-col h-full overflow-y-auto">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Generate Custom Report</h2>
+                    <div class="max-w-md mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Business Unit</label>
+                        <div id="report-bu-filter" class="w-full"></div>
+                    </div>
+                    <div class="flex justify-start space-x-3 border-t pt-4">
+                        <button onclick="resetReportFilters()" class="bg-white border border-gray-300 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50">Reset</button>
+                        <button onclick="generateReport()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">Generate Report</button>
                     </div>
                 </div>
-                <div class="table-container overflow-x-auto border rounded flex-1">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">BU</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">Task</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">Start Date</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">Deadline</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">Depending On</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">Submission</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">People</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">Status</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500">Priority</th>
-                                <th class="px-3 py-2 text-left font-medium text-gray-500 min-w-[250px]">Comments</th>
-                            </tr>
-                        </thead>
-                        <tbody id="report-tbody" class="bg-white divide-y divide-gray-200"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
 
-        <!-- Tab: Insights -->
-        <div id="tab-insights" class="hidden flex-col h-full overflow-y-auto space-y-6">
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">Total Active Tasks</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-1" id="in-total">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">Overall Completion %</p>
-                    <p class="text-2xl font-bold text-blue-600 mt-1" id="in-completion">0%</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">Active Overdue</p>
-                    <p class="text-2xl font-bold text-red-600 mt-1" id="in-overdue">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">High Priority (Active)</p>
-                    <p class="text-2xl font-bold text-orange-500 mt-1" id="in-high">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
-                    <p class="text-xs text-gray-500 font-semibold uppercase">Awaiting Review</p>
-                    <p class="text-2xl font-bold text-purple-600 mt-1" id="in-review">0</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-5 rounded-lg shadow-sm border md:col-span-1">
-                    <h3 class="text-md font-bold mb-4 border-b pb-2"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i> Focus Points</h3>
-                    <ul id="insights-recommendations" class="space-y-3 text-sm text-gray-700 list-disc pl-5">
-                        <li>Tasks marked as "Completed" are excluded from active workload views.</li>
-                        <li>Track active blockers and departmental handoffs under "Requires Attention".</li>
-                    </ul>
-                </div>
-                <div class="bg-white p-5 rounded-lg shadow-sm border md:col-span-2 flex flex-col max-h-96">
-                    <h3 class="text-md font-bold mb-4 border-b pb-2"><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> Requires Attention (Active Tasks)</h3>
-                    <div class="overflow-y-auto flex-1 pr-2 space-y-3" id="insights-attention"></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
-                <div class="bg-white p-5 rounded-lg shadow-sm border flex flex-col">
+                <div id="report-preview-section" class="hidden bg-white p-6 rounded-lg shadow-sm border flex-1 flex flex-col min-h-[400px]">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-md font-bold text-gray-900">Active Tasks by Status</h3>
-                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium">Excludes Completed</span>
+                        <h3 class="text-md font-bold text-gray-900">Report Preview (<span id="report-count">0</span> tasks)</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="downloadCSV()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium"><i class="fas fa-file-csv mr-2"></i> CSV</button>
+                            <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium"><i class="fas fa-file-pdf mr-2"></i> PDF</button>
+                        </div>
                     </div>
-                    <div class="flex-1 relative min-h-[300px]"><canvas id="chartStatus"></canvas></div>
-                </div>
-                <div class="bg-white p-5 rounded-lg shadow-sm border flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-md font-bold text-gray-900">Active Tasks by Business Unit</h3>
-                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-medium">Excludes Completed</span>
+                    <div class="table-container overflow-x-auto border rounded flex-1">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">BU</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Task</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Start Date</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Deadline</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Depending On</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Submission</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">People</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Status</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Priority</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500 min-w-[250px]">Comments</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-tbody" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
                     </div>
-                    <div class="flex-1 relative min-h-[300px]"><canvas id="chartBU"></canvas></div>
                 </div>
             </div>
-        </div>
-    </main>
+
+            <!-- Tab: Insights -->
+            <div id="tab-insights" class="hidden flex-col h-full overflow-y-auto space-y-6">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                        <p class="text-xs text-gray-500 font-semibold uppercase">Total Active Tasks</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="in-total">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                        <p class="text-xs text-gray-500 font-semibold uppercase">Overall Completion %</p>
+                        <p class="text-2xl font-bold text-blue-600 mt-1" id="in-completion">0%</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                        <p class="text-xs text-gray-500 font-semibold uppercase">Active Overdue</p>
+                        <p class="text-2xl font-bold text-red-600 mt-1" id="in-overdue">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                        <p class="text-xs text-gray-500 font-semibold uppercase">High Priority (Active)</p>
+                        <p class="text-2xl font-bold text-orange-500 mt-1" id="in-high">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border text-center">
+                        <p class="text-xs text-gray-500 font-semibold uppercase">Awaiting Review</p>
+                        <p class="text-2xl font-bold text-purple-600 mt-1" id="in-review">0</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-lg shadow-sm border md:col-span-1">
+                        <h3 class="text-md font-bold mb-4 border-b pb-2"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i> Focus Points</h3>
+                        <ul id="insights-recommendations" class="space-y-3 text-sm text-gray-700 list-disc pl-5">
+                            <li>Tasks marked as "Completed" are excluded from active workload views.</li>
+                            <li>Track active blockers and departmental handoffs under "Requires Attention".</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border md:col-span-2 flex flex-col max-h-96">
+                        <h3 class="text-md font-bold mb-4 border-b pb-2"><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> Requires Attention (Active Tasks)</h3>
+                        <div class="overflow-y-auto flex-1 pr-2 space-y-3" id="insights-attention"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
+                    <div class="bg-white p-5 rounded-lg shadow-sm border flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-md font-bold text-gray-900">Active Tasks by Status</h3>
+                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium">Excludes Completed</span>
+                        </div>
+                        <div class="flex-1 relative min-h-[300px]"><canvas id="chartStatus"></canvas></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-md font-bold text-gray-900">Active Tasks by Business Unit</h3>
+                            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-medium">Excludes Completed</span>
+                        </div>
+                        <div class="flex-1 relative min-h-[300px]"><canvas id="chartBU"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
 
     <!-- Modal: Add / Edit Task -->
     <div id="task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 overflow-y-auto">
@@ -282,23 +325,16 @@
                             </div>
                             <div><label class="block text-sm font-medium mb-1">Submission Date</label><input type="date" id="form-submission" class="w-full border rounded py-2 px-3 text-sm"></div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Added By *</label>
-                                <select id="form-author" class="w-full border rounded py-2 px-3 text-sm">
+                                <label class="block text-sm font-medium mb-1 text-gray-500">Added By</label>
+                                <select id="form-author" class="w-full border rounded py-2 px-3 text-sm bg-gray-100 text-gray-600" disabled>
                                     <option value="">Select name...</option>
-                                    <option value="Baile">Baile</option>
-                                    <option value="Boitumelo">Boitumelo</option>
-                                    <option value="Khetiwe">Khetiwe</option>
-                                    <option value="Khumbelo">Khumbelo</option>
-                                    <option value="Kwanele">Kwanele</option>
-                                    <option value="Lesley">Lesley</option>
-                                    <option value="Lorain">Lorain</option>
-                                    <option value="Nosipho">Nosipho</option>
-                                    <option value="Olebogeng">Olebogeng</option>
-                                    <option value="Phemelo">Phemelo</option>
-                                    <option value="Ridovhona">Ridovhona</option>
-                                    <option value="Thato">Thato</option>
+                                    <option value="Baile">Baile</option><option value="Boitumelo">Boitumelo</option>
+                                    <option value="Khetiwe">Khetiwe</option><option value="Khumbelo">Khumbelo</option>
+                                    <option value="Kwanele">Kwanele</option><option value="Lesley">Lesley</option>
+                                    <option value="Lorain">Lorain</option><option value="Nosipho">Nosipho</option>
+                                    <option value="Olebogeng">Olebogeng</option><option value="Phemelo">Phemelo</option>
+                                    <option value="Ridovhona">Ridovhona</option><option value="Thato">Thato</option>
                                 </select>
-                                <p class="text-xs text-red-500 hidden mt-1" id="err-author">Required</p>
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="block text-sm font-medium mb-1">Initial Comment</label>
@@ -343,19 +379,13 @@
                         <h4 class="text-sm font-bold mb-3">Comments History</h4>
                         <div class="bg-gray-50 border rounded-md p-3 max-h-48 overflow-y-auto mb-4 text-sm" id="view-comments"></div>
                         <div class="flex space-x-2">
-                            <select id="new-comment-author" class="w-32 border rounded py-2 px-3 text-sm">
-                                <option value="Baile">Baile</option>
-                                <option value="Boitumelo">Boitumelo</option>
-                                <option value="Khetiwe">Khetiwe</option>
-                                <option value="Khumbelo">Khumbelo</option>
-                                <option value="Kwanele">Kwanele</option>
-                                <option value="Lesley">Lesley</option>
-                                <option value="Lorain">Lorain</option>
-                                <option value="Nosipho">Nosipho</option>
-                                <option value="Olebogeng">Olebogeng</option>
-                                <option value="Phemelo">Phemelo</option>
-                                <option value="Ridovhona">Ridovhona</option>
-                                <option value="Thato">Thato</option>
+                            <select id="new-comment-author" class="w-32 border rounded py-2 px-3 text-sm bg-gray-100 text-gray-600 hidden">
+                                <option value="Baile">Baile</option><option value="Boitumelo">Boitumelo</option>
+                                <option value="Khetiwe">Khetiwe</option><option value="Khumbelo">Khumbelo</option>
+                                <option value="Kwanele">Kwanele</option><option value="Lesley">Lesley</option>
+                                <option value="Lorain">Lorain</option><option value="Nosipho">Nosipho</option>
+                                <option value="Olebogeng">Olebogeng</option><option value="Phemelo">Phemelo</option>
+                                <option value="Ridovhona">Ridovhona</option><option value="Thato">Thato</option>
                             </select>
                             <input type="text" id="new-comment-input" placeholder="Add an update..." class="flex-1 border rounded py-2 px-3 text-sm">
                             <button onclick="addComment()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium">Add</button>
@@ -390,7 +420,7 @@
     </div>
 
     <script>
-        window.APP_STATE = { tasks: [], currentUser: null, currentViewTaskId: null, deleteTaskId: null, sortCol: 'deadlineDate', sortAsc: true, reportData: [] };
+        window.APP_STATE = { currentProfile: null, tasks: [], currentUser: null, currentViewTaskId: null, deleteTaskId: null, sortCol: 'deadlineDate', sortAsc: true, reportData: [] };
         const OPTIONS = {
             bu: ['TBFS', 'Lipton', 'RCL', 'HBFS', 'PepsiCo'],
             subtask: ['Detection Errors', 'Stitching Errors', 'Recaptures', 'Tail SKUs', 'NPDs', 'Pack Change', 'Training Data: Include', 'Training Data: Exclude', 'Master Edits', 'Quality Control', 'Audit Call Cycle Tracking'],
@@ -405,7 +435,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Now using your actual Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAP39b8nWnu55bPN_1TCl55Hr5RsWCxS6c",
             authDomain: "ir-task-tracker.firebaseapp.com",
@@ -419,12 +448,43 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // Handle the login process
+        window.handleLogin = function() {
+            const profile = document.getElementById('login-profile').value;
+            if (!profile) {
+                document.getElementById('login-error').classList.remove('hidden');
+                return;
+            }
+            window.APP_STATE.currentProfile = profile;
+            
+            // Set header name
+            document.getElementById('header-user-name').innerText = profile;
+            
+            // Pre-fill fields
+            document.getElementById('form-author').value = profile;
+            document.getElementById('new-comment-author').value = profile;
+            
+            // Switch screens
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('flex');
+        };
+
+        // Handle logout process
+        window.handleLogout = function() {
+            window.APP_STATE.currentProfile = null;
+            document.getElementById('login-profile').value = '';
+            document.getElementById('main-app').classList.remove('flex');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        };
+
         window.saveTask = async () => {
             const bu = getMultiselectValues('form-bu');
             const subtask = getMultiselectValues('form-subtask');
             const dependingOn = getMultiselectValues('form-depending-on');
             const people = getMultiselectValues('form-people');
-            const author = document.getElementById('form-author').value;
+            const author = window.APP_STATE.currentProfile; // Use logged in user automatically
             const startDate = document.getElementById('form-start-date').value;
             const deadline = document.getElementById('form-deadline').value;
             const status = document.getElementById('form-status').value;
@@ -435,9 +495,8 @@
             if(!bu.length) { document.getElementById('err-bu').classList.remove('hidden'); valid = false; } else document.getElementById('err-bu').classList.add('hidden');
             if(!subtask.length) { document.getElementById('err-subtask').classList.remove('hidden'); valid = false; } else document.getElementById('err-subtask').classList.add('hidden');
             if(!people.length) { document.getElementById('err-people').classList.remove('hidden'); valid = false; } else document.getElementById('err-people').classList.add('hidden');
-            if(!author) { document.getElementById('err-author').classList.remove('hidden'); valid = false; } else document.getElementById('err-author').classList.add('hidden');
             
-            if(!startDate || !deadline || !valid) return;
+            if(!startDate || !deadline || !valid || !author) return;
 
             const taskId = document.getElementById('task-id').value || 'task_' + Date.now();
             const initialCommentText = document.getElementById('form-initial-comment').value.trim();
@@ -472,9 +531,9 @@
 
         window.addComment = async () => {
             const text = document.getElementById('new-comment-input').value.trim();
-            const author = document.getElementById('new-comment-author').value;
+            const author = window.APP_STATE.currentProfile; // Use logged in user automatically
             const taskId = window.APP_STATE.currentViewTaskId;
-            if(!text || !taskId) return;
+            if(!text || !taskId || !author) return;
 
             const task = window.APP_STATE.tasks.find(t => t.id === taskId);
             const newComment = { date: new Date().toISOString(), user: author, text: text };
@@ -666,7 +725,11 @@
             setMultiselectValues('form-depending-on', [], 'Select Dept'); setMultiselectValues('form-people', [], 'Select People');
             document.getElementById('form-start-date').value = ''; document.getElementById('form-deadline').value = '';
             document.getElementById('form-status').value = 'Not Started'; document.getElementById('form-priority').value = 'Medium Priority';
-            document.getElementById('form-author').value = ''; document.getElementById('form-initial-comment').value = '';
+            document.getElementById('form-initial-comment').value = '';
+            
+            // Ensure the profile is pre-filled and locked in
+            document.getElementById('form-author').value = window.APP_STATE.currentProfile;
+            
             document.querySelectorAll('#task-form p.text-red-500').forEach(e=>e.classList.add('hidden'));
             openModal('task-modal');
         }
@@ -679,7 +742,11 @@
             document.getElementById('form-start-date').value = t.startDate; document.getElementById('form-deadline').value = t.deadlineDate;
             document.getElementById('form-submission').value = t.submissionDate || ''; document.getElementById('form-status').value = t.status;
             document.getElementById('form-priority').value = t.priority || 'Medium Priority';
-            document.getElementById('form-author').value = ''; document.getElementById('form-initial-comment').value = '';
+            document.getElementById('form-initial-comment').value = '';
+            
+            // Ensure the profile is pre-filled and locked in
+            document.getElementById('form-author').value = window.APP_STATE.currentProfile;
+            
             document.querySelectorAll('#task-form p.text-red-500').forEach(e=>e.classList.add('hidden'));
             openModal('task-modal');
         }
@@ -703,6 +770,10 @@
             
             const comms = document.getElementById('view-comments');
             comms.innerHTML = (t.comments && t.comments.length) ? t.comments.map(c => `<div class="mb-2 pb-2 border-b"><span class="font-bold text-gray-700">${formatDateTime(c.date)} - ${c.user}:</span> <span class="text-gray-600">${c.text}</span></div>`).join('') : '<p class="italic text-gray-400">No comments</p>';
+            
+            // Hidden comment author field will default to the current profile
+            document.getElementById('new-comment-author').value = window.APP_STATE.currentProfile;
+            
             openModal('view-modal');
         }
 
