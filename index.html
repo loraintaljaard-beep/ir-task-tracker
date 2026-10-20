@@ -60,6 +60,7 @@
 
     <main class="flex-1 overflow-hidden flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
         
+        <!-- Global Loader -->
         <div id="global-loader" class="flex-1 flex justify-center items-center">
             <div class="flex flex-col items-center">
                 <i class="fas fa-circle-notch fa-spin text-blue-600 text-4xl mb-4" id="loader-icon"></i>
@@ -283,7 +284,19 @@
                             <div>
                                 <label class="block text-sm font-medium mb-1">Added By *</label>
                                 <select id="form-author" class="w-full border rounded py-2 px-3 text-sm">
-                                    <option value="">Select name...</option><option value="Baile">Baile</option><option value="Lorain">Lorain</option>
+                                    <option value="">Select name...</option>
+                                    <option value="Baile">Baile</option>
+                                    <option value="Boitumelo">Boitumelo</option>
+                                    <option value="Khetiwe">Khetiwe</option>
+                                    <option value="Khumbelo">Khumbelo</option>
+                                    <option value="Kwanele">Kwanele</option>
+                                    <option value="Lesley">Lesley</option>
+                                    <option value="Lorain">Lorain</option>
+                                    <option value="Nosipho">Nosipho</option>
+                                    <option value="Olebogeng">Olebogeng</option>
+                                    <option value="Phemelo">Phemelo</option>
+                                    <option value="Ridovhona">Ridovhona</option>
+                                    <option value="Thato">Thato</option>
                                 </select>
                                 <p class="text-xs text-red-500 hidden mt-1" id="err-author">Required</p>
                             </div>
@@ -331,7 +344,18 @@
                         <div class="bg-gray-50 border rounded-md p-3 max-h-48 overflow-y-auto mb-4 text-sm" id="view-comments"></div>
                         <div class="flex space-x-2">
                             <select id="new-comment-author" class="w-32 border rounded py-2 px-3 text-sm">
-                                <option value="Baile">Baile</option><option value="Lorain">Lorain</option>
+                                <option value="Baile">Baile</option>
+                                <option value="Boitumelo">Boitumelo</option>
+                                <option value="Khetiwe">Khetiwe</option>
+                                <option value="Khumbelo">Khumbelo</option>
+                                <option value="Kwanele">Kwanele</option>
+                                <option value="Lesley">Lesley</option>
+                                <option value="Lorain">Lorain</option>
+                                <option value="Nosipho">Nosipho</option>
+                                <option value="Olebogeng">Olebogeng</option>
+                                <option value="Phemelo">Phemelo</option>
+                                <option value="Ridovhona">Ridovhona</option>
+                                <option value="Thato">Thato</option>
                             </select>
                             <input type="text" id="new-comment-input" placeholder="Add an update..." class="flex-1 border rounded py-2 px-3 text-sm">
                             <button onclick="addComment()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium">Add</button>
@@ -348,6 +372,10 @@
             <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform sm:max-w-md sm:w-full bg-white px-6 pt-5 pb-6">
                 <h3 class="text-lg font-medium text-center text-gray-900">Delete Task?</h3>
                 <p class="text-sm text-gray-500 text-center mt-2">Are you sure you want to delete this task? This action cannot be undone.</p>
+                <div class="mt-4">
+                    <input type="password" id="delete-password" placeholder="Enter password to confirm" class="w-full border border-gray-300 rounded py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <p id="delete-error" class="text-xs text-red-500 hidden mt-1">Incorrect password.</p>
+                </div>
                 <div class="flex justify-center space-x-4 mt-6">
                     <button onclick="confirmDelete()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium">Delete</button>
                     <button onclick="closeModal('delete-modal')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm font-medium">Cancel</button>
@@ -374,23 +402,33 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAP39b8nWnu55bPN_1TCl55Hr5RsWCxS6c",
-            authDomain: "ir-task-tracker.firebaseapp.com",
-            projectId: "ir-task-tracker",
-            storageBucket: "ir-task-tracker.firebasestorage.app",
-            messagingSenderId: "995915361733",
-            appId: "1:995915361733:web:24b8fd36cbce1726f06fac"
-        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let firebaseConfig;
+
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } else {
+            firebaseConfig = {
+                apiKey: "AIzaSyAP39b8nWnu55bPN_1TCl55Hr5RsWCxS6c",
+                authDomain: "ir-task-tracker.firebaseapp.com",
+                projectId: "ir-task-tracker",
+                storageBucket: "ir-task-tracker.firebasestorage.app",
+                messagingSenderId: "995915361733",
+                appId: "1:995915361733:web:24b8fd36cbce1726f06fac"
+            };
+        }
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // Core save function
         window.saveTask = async () => {
+            if (!auth.currentUser) return;
+
             const bu = getMultiselectValues('form-bu');
             const subtask = getMultiselectValues('form-subtask');
             const dependingOn = getMultiselectValues('form-depending-on');
@@ -425,17 +463,25 @@
 
             const taskData = { bu, subtask, dependingOn, people, startDate, deadlineDate: deadline, submissionDate: submission || '', status, priority, comments: existingComments };
 
-            await setDoc(doc(db, 'tasks', taskId), taskData);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), taskData);
             closeModal('task-modal');
         };
 
         window.confirmDelete = async () => {
-            if (!window.APP_STATE.deleteTaskId) return;
-            await deleteDoc(doc(db, 'tasks', window.APP_STATE.deleteTaskId));
+            const pwd = document.getElementById('delete-password').value;
+            if (pwd !== 'Override1') {
+                document.getElementById('delete-error').classList.remove('hidden');
+                return;
+            }
+
+            if (!auth.currentUser || !window.APP_STATE.deleteTaskId) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', window.APP_STATE.deleteTaskId));
             closeModal('delete-modal');
         };
 
         window.addComment = async () => {
+            if (!auth.currentUser) return;
+            
             const text = document.getElementById('new-comment-input').value.trim();
             const author = document.getElementById('new-comment-author').value;
             const taskId = window.APP_STATE.currentViewTaskId;
@@ -443,18 +489,32 @@
 
             const task = window.APP_STATE.tasks.find(t => t.id === taskId);
             const newComment = { date: new Date().toISOString(), user: author, text: text };
-            await setDoc(doc(db, 'tasks', taskId), { ...task, comments: [...(task.comments || []), newComment] }, { merge: true });
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), { ...task, comments: [...(task.comments || []), newComment] }, { merge: true });
             
             document.getElementById('new-comment-input').value = '';
             setTimeout(() => window.viewTask(taskId), 100); 
         };
 
-        try { await signInAnonymously(auth); } catch (err) { showError("Authentication Failed", err.message); }
+        // Authentication & Initialization
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                showError("Authentication Failed", err.message);
+            }
+        }
+
+        initAuth();
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 window.APP_STATE.currentUser = user;
-                onSnapshot(collection(db, 'tasks'), (snapshot) => {
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), (snapshot) => {
                     window.APP_STATE.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     document.getElementById('global-loader').classList.add('hidden');
                     document.getElementById('tab-tracker').classList.remove('hidden');
@@ -649,7 +709,12 @@
             openModal('task-modal');
         }
 
-        window.promptDelete = function(id) { window.APP_STATE.deleteTaskId = id; openModal('delete-modal'); }
+        window.promptDelete = function(id) { 
+            window.APP_STATE.deleteTaskId = id; 
+            document.getElementById('delete-password').value = '';
+            document.getElementById('delete-error').classList.add('hidden');
+            openModal('delete-modal'); 
+        }
 
         window.viewTask = function(id) {
             const t = window.APP_STATE.tasks.find(x => x.id === id); if(!t) return;
