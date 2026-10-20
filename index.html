@@ -475,10 +475,27 @@
             document.getElementById('main-app').classList.add('flex');
         };
 
-        // Handle logout process
+        // Handle logout process and reset all local UI state
         window.handleLogout = function() {
             window.APP_STATE.currentProfile = null;
             document.getElementById('login-profile').value = '';
+            
+            // Reset to default tab
+            switchTab('tracker');
+            
+            // Clear tracker filters
+            document.getElementById('filter-search').value = '';
+            document.getElementById('filter-status').value = '';
+            document.getElementById('filter-priority').value = '';
+            
+            // Clear report filters
+            setMultiselectValues('report-bu-filter', [], 'Any BU');
+            document.getElementById('report-preview-section').classList.add('hidden');
+            
+            // Re-render empty table
+            window.renderTrackerTable();
+
+            // Switch back to login screen
             document.getElementById('main-app').classList.remove('flex');
             document.getElementById('main-app').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
