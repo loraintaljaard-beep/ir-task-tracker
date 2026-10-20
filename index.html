@@ -402,33 +402,24 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let firebaseConfig;
-
-        if (typeof __firebase_config !== 'undefined') {
-            firebaseConfig = JSON.parse(__firebase_config);
-        } else {
-            firebaseConfig = {
-                apiKey: "AIzaSyAP39b8nWnu55bPN_1TCl55Hr5RsWCxS6c",
-                authDomain: "ir-task-tracker.firebaseapp.com",
-                projectId: "ir-task-tracker",
-                storageBucket: "ir-task-tracker.firebasestorage.app",
-                messagingSenderId: "995915361733",
-                appId: "1:995915361733:web:24b8fd36cbce1726f06fac"
-            };
-        }
+        // Now using your actual Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAP39b8nWnu55bPN_1TCl55Hr5RsWCxS6c",
+            authDomain: "ir-task-tracker.firebaseapp.com",
+            projectId: "ir-task-tracker",
+            storageBucket: "ir-task-tracker.firebasestorage.app",
+            messagingSenderId: "995915361733",
+            appId: "1:995915361733:web:b604978e7dda520ff06fac"
+        };
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Core save function
         window.saveTask = async () => {
-            if (!auth.currentUser) return;
-
             const bu = getMultiselectValues('form-bu');
             const subtask = getMultiselectValues('form-subtask');
             const dependingOn = getMultiselectValues('form-depending-on');
@@ -463,7 +454,7 @@
 
             const taskData = { bu, subtask, dependingOn, people, startDate, deadlineDate: deadline, submissionDate: submission || '', status, priority, comments: existingComments };
 
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), taskData);
+            await setDoc(doc(db, 'tasks', taskId), taskData);
             closeModal('task-modal');
         };
 
@@ -474,14 +465,12 @@
                 return;
             }
 
-            if (!auth.currentUser || !window.APP_STATE.deleteTaskId) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', window.APP_STATE.deleteTaskId));
+            if (!window.APP_STATE.deleteTaskId) return;
+            await deleteDoc(doc(db, 'tasks', window.APP_STATE.deleteTaskId));
             closeModal('delete-modal');
         };
 
         window.addComment = async () => {
-            if (!auth.currentUser) return;
-            
             const text = document.getElementById('new-comment-input').value.trim();
             const author = document.getElementById('new-comment-author').value;
             const taskId = window.APP_STATE.currentViewTaskId;
@@ -489,32 +478,18 @@
 
             const task = window.APP_STATE.tasks.find(t => t.id === taskId);
             const newComment = { date: new Date().toISOString(), user: author, text: text };
-            
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), { ...task, comments: [...(task.comments || []), newComment] }, { merge: true });
+            await setDoc(doc(db, 'tasks', taskId), { ...task, comments: [...(task.comments || []), newComment] }, { merge: true });
             
             document.getElementById('new-comment-input').value = '';
             setTimeout(() => window.viewTask(taskId), 100); 
         };
 
-        // Authentication & Initialization
-        async function initAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                showError("Authentication Failed", err.message);
-            }
-        }
-
-        initAuth();
+        try { await signInAnonymously(auth); } catch (err) { showError("Authentication Failed", err.message); }
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 window.APP_STATE.currentUser = user;
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), (snapshot) => {
+                onSnapshot(collection(db, 'tasks'), (snapshot) => {
                     window.APP_STATE.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     document.getElementById('global-loader').classList.add('hidden');
                     document.getElementById('tab-tracker').classList.remove('hidden');
