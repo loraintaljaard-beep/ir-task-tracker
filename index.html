@@ -145,6 +145,17 @@
                             </div>
                         </div>
                         <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">BU</label>
+                            <select id="filter-bu" onchange="renderTrackerTable()" class="w-full bg-slate-700 border border-slate-600 text-white rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">All BUs</option>
+                                <option value="TBFS">TBFS</option>
+                                <option value="Lipton">Lipton</option>
+                                <option value="RCL">RCL</option>
+                                <option value="HBFS">HBFS</option>
+                                <option value="PepsiCo">PepsiCo</option>
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
                             <select id="filter-status" onchange="renderTrackerTable()" class="w-full bg-slate-700 border border-slate-600 text-white rounded-md shadow-sm py-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All Statuses</option>
@@ -499,6 +510,7 @@
             
             // Clear tracker filters
             document.getElementById('filter-search').value = '';
+            document.getElementById('filter-bu').value = '';
             document.getElementById('filter-status').value = '';
             document.getElementById('filter-priority').value = '';
             
@@ -743,10 +755,12 @@
 
         window.renderTrackerTable = function() {
             const search = document.getElementById('filter-search').value.toLowerCase();
+            const buF = document.getElementById('filter-bu').value;
             const statusF = document.getElementById('filter-status').value;
             const priorityF = document.getElementById('filter-priority').value;
             
             let tasks = window.APP_STATE.tasks.filter(t => {
+                if(buF && !t.bu.includes(buF)) return false;
                 if(statusF && t.status !== statusF) return false;
                 if(priorityF && t.priority !== priorityF) return false;
                 if(search) return `${t.bu} ${t.subtask} ${t.people} ${t.status} ${(t.comments||[]).map(c=>c.text).join(' ')}`.toLowerCase().includes(search);
@@ -794,6 +808,7 @@
 
         window.clearTrackerFilters = function() {
             document.getElementById('filter-search').value = '';
+            document.getElementById('filter-bu').value = '';
             document.getElementById('filter-status').value = '';
             document.getElementById('filter-priority').value = '';
             renderTrackerTable();
@@ -898,10 +913,11 @@
                 `"${t.people.join('; ')}"`,
                 t.status,
                 t.priority,
-                `"${(t.comments || []).map(c => `[${c.user}]: ${c.text}`).join(' | ')}"`
+                `"${(t.comments || []).map(c => `[${c.user}]: ${c.text.replace(/"/g, '""')}`).join('\n')}"`
             ]);
             const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-            const encodedUri = encodeURI(csvContent);
+            // Replacing newlines with %0A ensures the browser processes multi-line cell formatting correctly.
+            const encodedUri = encodeURI(csvContent).replace(/\n/g, '%0A').replace(/#/g, '%23');
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
             link.setAttribute("download", `IR_Task_Report_${new Date().toISOString().slice(0,10)}.csv`);
